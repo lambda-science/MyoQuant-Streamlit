@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "histoquant-streamlit"
+version = "0.1.0"
+description = "Streamlit application code for my histology quantification project"
+authors = ["Corentin"]
+license = "AGPL"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+cellpose = "^2.1.0"
+stardist = "^0.8.3"
+streamlit = "^1.12.0"
+csbdeep = "^0.7.2"
+pyngrok = "^5.1.0"
+imageio = "^2.21.1"
+scikit-image = "^0.19.3"
+pandas = "^1.4.3"
+matplotlib = "^3.5.3"
+tensorflow = "^2.9.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
