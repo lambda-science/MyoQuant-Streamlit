@@ -1469,7 +1469,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "torch"
-version = "1.12.1"
+version = "1.12.1+cu116"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 category = "main"
 optional = false
@@ -1478,6 +1478,9 @@ python-versions = ">=3.7.0"
 [package.dependencies]
 typing-extensions = "*"
 
+[package.source]
+type = "url"
+url = "https://download.pytorch.org/whl/cu116/torch-1.12.1%2Bcu116-cp39-cp39-linux_x86_64.whl"
 [[package]]
 name = "tornado"
 version = "6.2"
@@ -1637,7 +1640,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.11"
-content-hash = "01412d996095716665567746aafa9716e5bf0eeccdf24218e903118dd745bf27"
+content-hash = "dc10d95ff20f48c0a72cf2ad5dd9902ecf16069e3c1a2498e0ac5204751b4e25"
 
 [metadata.files]
 absl-py = []
