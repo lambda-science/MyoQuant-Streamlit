@@ -13,10 +13,11 @@ st.set_page_config(
     page_icon="🔬",
 )
 
-if core.use_gpu() == False:
-    use_GPU = False
-else:
-    use_GPU = True
+# if core.use_gpu() == False:
+#     use_GPU = False
+# else:
+#     use_GPU = True
+use_GPU = False
 
 
 @st.experimental_singleton

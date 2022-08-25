@@ -13,16 +13,15 @@ from tensorflow import keras
 from gradcam import *
 
 labels_predict = ["control", "sick"]
-
 st.set_page_config(
     page_title="HistoQuant-Streamlit",
     page_icon="🔬",
 )
-
-if use_gpu() == False:
-    use_GPU = False
-else:
-    use_GPU = True
+# if use_gpu() == False:
+#     use_GPU = False
+# else:
+#     use_GPU = True
+use_GPU = False
 
 
 @st.experimental_singleton
@@ -99,6 +98,7 @@ def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
 
 
 model_cellpose = load_cellpose()
+
 model_SDH = load_sdh_model()
 
 st.title("SDH Staining Analysis")
@@ -110,6 +110,7 @@ uploaded_file = st.file_uploader("Choose a file")
 
 if uploaded_file is not None:
     image_ndarray = imread(uploaded_file)
+
     st.write("Raw Image")
     image = st.image(uploaded_file)
 
@@ -123,6 +124,7 @@ if uploaded_file is not None:
     st.pyplot(fig)
 
     st.subheader("All cells detected by CellPose")
+
     props_cellpose = regionprops_table(
         mask_cellpose,
         properties=[
@@ -143,8 +145,10 @@ if uploaded_file is not None:
     grad_img_all, class_predicted_all, proba_predicted_all = predict_all_cells(
         image_ndarray, mask_cellpose, df_cellpose
     )
+
     count_per_label = np.unique(class_predicted_all, return_counts=True)
     label_count = dict()
+
     for index, label in enumerate(labels_predict):
         label_count[count_per_label[0][index]] = count_per_label
     class_predicted_all
@@ -170,6 +174,7 @@ if uploaded_file is not None:
     ax2.imshow(grad_img_all[selected_fiber])
     ax1.axis("off")
     # ax2.axis("off")
+
     xlabel = (
         labels_predict[int(class_predicted_all[selected_fiber])]
         + " ("
