@@ -155,5 +155,4 @@ cython_debug/
 *.html
 HistoQuant
 EHRoes
-*.jpg
-*.png
+*.h5
