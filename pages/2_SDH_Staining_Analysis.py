@@ -6,22 +6,35 @@ from skimage.measure import regionprops_table
 import pandas as pd
 import matplotlib.pyplot as plt
 from stardist import random_label_cmap
-
 import tensorflow as tf
+from tensorflow.config import list_physical_devices
 from tensorflow import keras
 
 from gradcam import *
+from os import path
+import urllib.request
 
 labels_predict = ["control", "sick"]
+
 st.set_page_config(
     page_title="HistoQuant-Streamlit",
     page_icon="🔬",
 )
-# if use_gpu() == False:
-#     use_GPU = False
-# else:
-#     use_GPU = True
-use_GPU = False
+
+if path.exists("model.h5"):
+    st.success("SDH Model ready to use !")
+    pass
+else:
+    with st.spinner("Please wait we are downloading the SDH Model."):
+        urllib.request.urlretrieve(
+            "https://lbgi.fr/~meyer/SDH_models/model.h5", "model.h5"
+        )
+    st.success("SDH Model have been downloaded !")
+
+if len(list_physical_devices("GPU")) >= 1:
+    use_GPU = True
+else:
+    use_GPU = False
 
 
 @st.experimental_singleton
@@ -69,7 +82,7 @@ def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
     predicted_proba_array = np.empty((len(cellpose_df)))
     my_bar = st.progress(0)
     for index in range(len(cellpose_df)):
-        single_cell_img = image_ndarray[
+        single_cell_img = image_ndarray_sdh[
             cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
             cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
         ]
@@ -106,15 +119,15 @@ st.write(
     "This demo will automatically detect cells classify the SDH stained cell as sick or healthy using our deep-learning model."
 )
 st.write("Upload your SDH Staining image")
-uploaded_file = st.file_uploader("Choose a file")
+uploaded_file_sdh = st.file_uploader("Choose a file")
 
-if uploaded_file is not None:
-    image_ndarray = imread(uploaded_file)
+if uploaded_file_sdh is not None:
+    image_ndarray_sdh = imread(uploaded_file_sdh)
 
     st.write("Raw Image")
-    image = st.image(uploaded_file)
+    image = st.image(uploaded_file_sdh)
 
-    mask_cellpose = run_cellpose(image_ndarray)
+    mask_cellpose = run_cellpose(image_ndarray_sdh)
 
     st.header("Segmentation Results")
     st.subheader("CellPose results")
@@ -143,7 +156,7 @@ if uploaded_file is not None:
     st.header("SDH Cell Classification Results")
 
     grad_img_all, class_predicted_all, proba_predicted_all = predict_all_cells(
-        image_ndarray, mask_cellpose, df_cellpose
+        image_ndarray_sdh, mask_cellpose, df_cellpose
     )
 
     count_per_label = np.unique(class_predicted_all, return_counts=True)
@@ -156,7 +169,7 @@ if uploaded_file is not None:
     st.header("Single Cell Grad-CAM")
     selected_fiber = st.selectbox("Select a cell", list(range(len(df_cellpose))))
     selected_fiber = int(selected_fiber)
-    single_cell_img = image_ndarray[
+    single_cell_img = image_ndarray_sdh[
         df_cellpose.iloc[selected_fiber, 5] : df_cellpose.iloc[selected_fiber, 7],
         df_cellpose.iloc[selected_fiber, 6] : df_cellpose.iloc[selected_fiber, 8],
     ]

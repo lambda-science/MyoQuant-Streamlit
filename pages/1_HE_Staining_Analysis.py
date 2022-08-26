@@ -7,17 +7,17 @@ from skimage.measure import regionprops_table
 import pandas as pd
 import matplotlib.pyplot as plt
 from stardist import random_label_cmap
+from tensorflow.config import list_physical_devices
 
 st.set_page_config(
     page_title="HistoQuant-Streamlit",
     page_icon="🔬",
 )
 
-# if core.use_gpu() == False:
-#     use_GPU = False
-# else:
-#     use_GPU = True
-use_GPU = False
+if len(list_physical_devices("GPU")) >= 1:
+    use_GPU = True
+else:
+    use_GPU = False
 
 
 @st.experimental_singleton
