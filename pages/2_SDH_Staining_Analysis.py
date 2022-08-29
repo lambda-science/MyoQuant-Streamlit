@@ -61,9 +61,10 @@ def run_cellpose(image):
 @st.experimental_memo
 def predict_single_cell(single_cell_img):
     img_array = np.empty((1, 256, 256, 3))
-    img_array[0] = (
-        keras.preprocessing.image.smart_resize(single_cell_img, (256, 256)) / 255.0
-    )
+    # img_array[0] = (
+    #    keras.preprocessing.image.smart_resize(single_cell_img, (256, 256)) / 255.0
+    # )
+    img_array[0] = tf.image.resize(single_cell_img, (256, 256)) / 255.0
     predicted_class = model_SDH.predict(img_array * 255).argmax()
     predicted_proba = round(np.amax(model_SDH.predict(img_array * 255)), 2)
     heatmap = make_gradcam_heatmap(
@@ -90,9 +91,10 @@ def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
         single_cell_mask = cellpose_df.iloc[index, 9]
         single_cell_img[~single_cell_mask] = 0
 
-        img_array[index] = (
-            keras.preprocessing.image.smart_resize(single_cell_img, (256, 256)) / 255.0
-        )
+        # img_array[index] = (
+        #     keras.preprocessing.image.smart_resize(single_cell_img, (256, 256)) / 255.0
+        # )
+        img_array[index] = tf.image.resize(single_cell_img, (256, 256)) / 255.0
         single_img_array[0] = img_array[index]
         heatmap = make_gradcam_heatmap(
             single_img_array, model_SDH.get_layer("resnet50v2"), "conv5_block3_3_conv"
@@ -165,6 +167,21 @@ if uploaded_file_sdh is not None:
     for index, label in enumerate(labels_predict):
         label_count[count_per_label[0][index]] = count_per_label
     class_predicted_all
+    st.write("Total number of cells detected: ", len(class_predicted_all))
+    st.write(
+        "Number of cells classified as control: ",
+        count_per_label[1][0],
+        " ",
+        100 * count_per_label[1][0] / len(class_predicted_all),
+        "%",
+    )
+    st.write(
+        "Number of cells classified as sick: ",
+        count_per_label[1][1],
+        " ",
+        100 * count_per_label[1][1] / len(class_predicted_all),
+        "%",
+    )
 
     st.header("Single Cell Grad-CAM")
     selected_fiber = st.selectbox("Select a cell", list(range(len(df_cellpose))))
@@ -180,9 +197,10 @@ if uploaded_file_sdh is not None:
     # grad_img, class_predicted, proba_predicted = predict_single_cell(single_cell_img)
 
     fig2, (ax1, ax2) = plt.subplots(1, 2)
-    resized_single_cell_img = keras.preprocessing.image.smart_resize(
-        single_cell_img, (256, 256)
-    )
+    # resized_single_cell_img = keras.preprocessing.image.smart_resize(
+    #     single_cell_img, (256, 256)
+    # )
+    resized_single_cell_img = tf.image.resize(single_cell_img, (256, 256))
     ax1.imshow(single_cell_img)
     ax2.imshow(grad_img_all[selected_fiber])
     ax1.axis("off")
