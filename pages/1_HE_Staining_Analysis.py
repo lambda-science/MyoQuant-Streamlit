@@ -8,6 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from stardist import random_label_cmap
 from tensorflow.config import list_physical_devices
+from draw_line import *
+from skimage.draw import line
 
 st.set_page_config(
     page_title="HistoQuant-Streamlit",
@@ -114,17 +116,6 @@ if uploaded_file is not None:
     single_cell_img[~single_cell_mask] = 0
     nucleus_single_cell_img[~single_cell_mask] = 0
 
-    fig2, (ax1, ax2, ax3) = plt.subplots(1, 3)
-    ax1.imshow(single_cell_img)
-    ax2.imshow(nucleus_single_cell_img, cmap="viridis")
-    ax3.imshow(single_cell_img)
-    ax3.imshow(nucleus_single_cell_img, cmap="viridis", alpha=0.5)
-    ax1.axis("off")
-    ax2.axis("off")
-    ax3.axis("off")
-    st.pyplot(fig2)
-
-    st.subheader("All nucleus inside selected cell")
     props_nuc_single = regionprops_table(
         nucleus_single_cell_img,
         intensity_image=single_cell_img,
@@ -139,4 +130,70 @@ if uploaded_file is not None:
         ],
     )
     df_nuc_single = pd.DataFrame(props_nuc_single)
+    st.markdown(
+        """
+        * White point represent cell centroid. 
+        * Green point represent nucleus centroid. Green dashed line represent the fiber centrer - nucleus distance. 
+        * Red point represent the cell border from a straight line between the cell centroid and the nucleus centroid. The red dashed line represent distance between the nucelus and the cell border. 
+        * The periphery ratio is calculated by the division of the distance centroid - nucleus and the distance centroid - cell border."""
+    )
+    fig2, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    ax1.imshow(single_cell_img)
+    ax2.imshow(nucleus_single_cell_img, cmap="viridis")
+    # Plot Fiber centroid
+    x_fiber = df_cellpose.iloc[selected_fiber, 3] - df_cellpose.iloc[selected_fiber, 6]
+    y_fiber = df_cellpose.iloc[selected_fiber, 2] - df_cellpose.iloc[selected_fiber, 5]
+    ax3.scatter(x_fiber, y_fiber, color="white")
+    # Plot nucleus centroid
+    print("#######")
+    print(single_cell_img.shape)
+    for index, value in df_nuc_single.iterrows():
+        ax3.scatter(value[3], value[2], color="blue", s=2)
+        # Extend line and find closest point
+        m, b = line_equation(x_fiber, y_fiber, value[3], value[2])
+
+        intersections_lst = calculate_intersection(
+            m, b, (single_cell_img.shape[0], single_cell_img.shape[1])
+        )
+        border_point = calculate_closest_point(value[3], value[2], intersections_lst)
+        ax3.plot(
+            (x_fiber, border_point[0]),
+            (y_fiber, border_point[1]),
+            "ro--",
+            linewidth=1,
+            markersize=1,
+        )
+        ax3.plot(
+            (x_fiber, value[3]),
+            (y_fiber, value[2]),
+            "go--",
+            linewidth=1,
+            markersize=1,
+        )
+
+        rr, cc = line(
+            int(y_fiber),
+            int(x_fiber),
+            int(border_point[1]),
+            int(border_point[0]),
+        )
+        for coords in zip(rr, cc):
+            if single_cell_mask[coords] == 0:
+                dist_nuc_cent = calculate_distance(x_fiber, y_fiber, value[3], value[2])
+                dist_out_of_fiber = calculate_distance(
+                    x_fiber, y_fiber, coords[1], coords[0]
+                )
+                ratio_dist = dist_nuc_cent / dist_out_of_fiber
+                ax3.scatter(coords[1], coords[0], color="red", s=10)
+                break
+        st.write("Nucleus #{} has a periphery ratio of: {}".format(index, ratio_dist))
+    ax3.imshow(single_cell_img)
+    ax3.imshow(nucleus_single_cell_img, cmap="viridis", alpha=0.5)
+    ax1.axis("off")
+    ax2.axis("off")
+    ax3.axis("off")
+    st.pyplot(fig2)
+
+    st.subheader("All nucleus inside selected cell")
+
     st.dataframe(df_nuc_single.drop("image", axis=1))
