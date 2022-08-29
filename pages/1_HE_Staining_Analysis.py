@@ -177,8 +177,20 @@ if uploaded_file is not None:
             int(border_point[1]),
             int(border_point[0]),
         )
-        for coords in zip(rr, cc):
-            if single_cell_mask[coords] == 0:
+        for index, coords in enumerate(list(zip(rr, cc))):
+            try:
+                if single_cell_mask[coords] == 0:
+                    dist_nuc_cent = calculate_distance(
+                        x_fiber, y_fiber, value[3], value[2]
+                    )
+                    dist_out_of_fiber = calculate_distance(
+                        x_fiber, y_fiber, coords[1], coords[0]
+                    )
+                    ratio_dist = dist_nuc_cent / dist_out_of_fiber
+                    ax3.scatter(coords[1], coords[0], color="red", s=10)
+                    break
+            except IndexError:
+                coords = list(zip(rr, cc))[index - 1]
                 dist_nuc_cent = calculate_distance(x_fiber, y_fiber, value[3], value[2])
                 dist_out_of_fiber = calculate_distance(
                     x_fiber, y_fiber, coords[1], coords[0]
@@ -186,6 +198,7 @@ if uploaded_file is not None:
                 ratio_dist = dist_nuc_cent / dist_out_of_fiber
                 ax3.scatter(coords[1], coords[0], color="red", s=10)
                 break
+
         st.write("Nucleus #{} has a periphery ratio of: {}".format(index, ratio_dist))
     ax3.imshow(single_cell_img)
     ax3.imshow(nucleus_single_cell_img, cmap="viridis", alpha=0.5)
