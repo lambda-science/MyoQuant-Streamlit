@@ -145,8 +145,6 @@ if uploaded_file is not None:
     y_fiber = df_cellpose.iloc[selected_fiber, 2] - df_cellpose.iloc[selected_fiber, 5]
     ax3.scatter(x_fiber, y_fiber, color="white")
     # Plot nucleus centroid
-    print("#######")
-    print(single_cell_img.shape)
     for index, value in df_nuc_single.iterrows():
         ax3.scatter(value[3], value[2], color="blue", s=2)
         # Extend line and find closest point

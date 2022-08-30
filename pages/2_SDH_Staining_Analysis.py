@@ -107,8 +107,6 @@ def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
             model_SDH.predict(single_img_array * 255)
         )
         my_bar.progress((index + 1 / (len(cellpose_df) / 100)) / 100)
-
-    print(np.unique(predicted_class_array, return_counts=True))
     return grad_cam_array, predicted_class_array, predicted_proba_array
 
 
