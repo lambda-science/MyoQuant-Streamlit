@@ -1,7 +1,11 @@
 import streamlit as st
 from cellpose.core import use_gpu
 from cellpose.models import Cellpose
-from imageio.v2 import imread
+
+try:
+    from imageio.v2 import imread
+except:
+    from imageio import imread
 from skimage.measure import regionprops_table
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,6 +17,7 @@ from tensorflow import keras
 from gradcam import *
 from os import path
 import urllib.request
+from random_brightness import *
 
 labels_predict = ["control", "sick"]
 
@@ -45,7 +50,9 @@ def load_cellpose():
 
 @st.experimental_singleton
 def load_sdh_model():
-    model_sdh = keras.models.load_model("model.h5")
+    model_sdh = keras.models.load_model(
+        "model.h5", custom_objects={"RandomBrightness": RandomBrightness}
+    )
     return model_sdh
 
 

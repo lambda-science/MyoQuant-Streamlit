@@ -2,7 +2,11 @@ import streamlit as st
 from cellpose import models, core
 from stardist.models import StarDist2D
 from csbdeep.utils import normalize
-from imageio.v2 import imread
+
+try:
+    from imageio.v2 import imread
+except:
+    from imageio import imread
 from skimage.measure import regionprops_table
 import pandas as pd
 import matplotlib.pyplot as plt
