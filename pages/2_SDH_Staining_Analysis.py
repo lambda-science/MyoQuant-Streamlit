@@ -68,12 +68,11 @@ def run_cellpose(image):
 @st.experimental_memo
 def predict_single_cell(single_cell_img):
     img_array = np.empty((1, 256, 256, 3))
-    # img_array[0] = (
-    #    keras.preprocessing.image.smart_resize(single_cell_img, (256, 256)) / 255.0
-    # )
+
     img_array[0] = tf.image.resize(single_cell_img, (256, 256)) / 255.0
-    predicted_class = model_SDH.predict(img_array * 255).argmax()
-    predicted_proba = round(np.amax(model_SDH.predict(img_array * 255)), 2)
+    prediction = model_SDH.predict(img_array * 255)
+    predicted_class = prediction.argmax()
+    predicted_proba = round(np.amax(prediction), 2)
     heatmap = make_gradcam_heatmap(
         img_array, model_SDH.get_layer("resnet50v2"), "conv5_block3_3_conv"
     )
@@ -84,11 +83,8 @@ def predict_single_cell(single_cell_img):
 @st.experimental_memo
 def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
     img_array = np.empty((len(cellpose_df), 256, 256, 3))
-    grad_cam_array = []
-    single_img_array = np.empty((1, 256, 256, 3))
     predicted_class_array = np.empty((len(cellpose_df)))
     predicted_proba_array = np.empty((len(cellpose_df)))
-    my_bar = st.progress(0)
     for index in range(len(cellpose_df)):
         single_cell_img = image_ndarray_sdh[
             cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
@@ -98,23 +94,15 @@ def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
         single_cell_mask = cellpose_df.iloc[index, 9]
         single_cell_img[~single_cell_mask] = 0
 
-        # img_array[index] = (
-        #     keras.preprocessing.image.smart_resize(single_cell_img, (256, 256)) / 255.0
-        # )
-        img_array[index] = tf.image.resize(single_cell_img, (256, 256)) / 255.0
-        single_img_array[0] = img_array[index]
-        heatmap = make_gradcam_heatmap(
-            single_img_array, model_SDH.get_layer("resnet50v2"), "conv5_block3_3_conv"
-        )
-        grad_cam_array.append(save_and_display_gradcam(img_array[index], heatmap))
-        predicted_class_array[index] = model_SDH.predict(
-            single_img_array * 255
-        ).argmax()
-        predicted_proba_array[index] = np.amax(
-            model_SDH.predict(single_img_array * 255)
-        )
-        my_bar.progress((index + 1 / (len(cellpose_df) / 100)) / 100)
-    return grad_cam_array, predicted_class_array, predicted_proba_array
+        img_array[index] = tf.image.resize(single_cell_img, (256, 256))
+
+    prediction = model_SDH.predict(img_array)
+    index_counter = 0
+    for prediction_result in prediction:
+        predicted_class_array[index_counter] = prediction_result.argmax()
+        predicted_proba_array[index_counter] = np.amax(prediction_result)
+        index_counter += 1
+    return predicted_class_array, predicted_proba_array
 
 
 model_cellpose = load_cellpose()
@@ -162,7 +150,7 @@ if uploaded_file_sdh is not None:
 
     st.header("SDH Cell Classification Results")
 
-    grad_img_all, class_predicted_all, proba_predicted_all = predict_all_cells(
+    class_predicted_all, proba_predicted_all = predict_all_cells(
         image_ndarray_sdh, mask_cellpose, df_cellpose
     )
 
@@ -199,22 +187,19 @@ if uploaded_file_sdh is not None:
     single_cell_mask = df_cellpose.iloc[selected_fiber, 9]
     single_cell_img[~single_cell_mask] = 0
 
-    # grad_img, class_predicted, proba_predicted = predict_single_cell(single_cell_img)
+    grad_img, class_predicted, proba_predicted = predict_single_cell(single_cell_img)
 
     fig2, (ax1, ax2) = plt.subplots(1, 2)
-    # resized_single_cell_img = keras.preprocessing.image.smart_resize(
-    #     single_cell_img, (256, 256)
-    # )
     resized_single_cell_img = tf.image.resize(single_cell_img, (256, 256))
     ax1.imshow(single_cell_img)
-    ax2.imshow(grad_img_all[selected_fiber])
+    ax2.imshow(grad_img)
     ax1.axis("off")
     # ax2.axis("off")
 
     xlabel = (
-        labels_predict[int(class_predicted_all[selected_fiber])]
+        labels_predict[int(class_predicted)]
         + " ("
-        + str(round(proba_predicted_all[selected_fiber], 2))
+        + str(round(proba_predicted, 2))
         + ")"
     )
     ax2.set_xlabel(xlabel)
