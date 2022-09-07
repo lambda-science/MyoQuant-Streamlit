@@ -21,6 +21,9 @@ from random_brightness import *
 
 labels_predict = ["control", "sick"]
 
+tf.random.set_seed(42)
+np.random.seed(42)
+
 st.set_page_config(
     page_title="HistoQuant-Streamlit",
     page_icon="🔬",
@@ -66,27 +69,24 @@ def run_cellpose(image):
 
 
 @st.experimental_memo
-def predict_single_cell(single_cell_img):
+def predict_single_cell(single_cell_img, _model_SDH):
     img_array = np.empty((1, 256, 256, 3))
-
-    img_array[0] = tf.image.resize(single_cell_img, (256, 256)) / 255.0
-    prediction = model_SDH.predict(img_array * 255)
+    img_array[0] = tf.image.resize(single_cell_img, (256, 256))
+    prediction = _model_SDH.predict(img_array)
     predicted_class = prediction.argmax()
     predicted_proba = round(np.amax(prediction), 2)
     heatmap = make_gradcam_heatmap(
-        img_array, model_SDH.get_layer("resnet50v2"), "conv5_block3_3_conv"
+        img_array, _model_SDH.get_layer("resnet50v2"), "conv5_block3_3_conv"
     )
     grad_cam_img = save_and_display_gradcam(img_array[0], heatmap)
     return grad_cam_img, predicted_class, predicted_proba
 
 
 @st.experimental_memo
-def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
-    img_array = np.empty((len(cellpose_df), 256, 256, 3))
-    predicted_class_array = np.empty((len(cellpose_df)))
-    predicted_proba_array = np.empty((len(cellpose_df)))
+def resize_batch_cells(histo_img, cellpose_df):
+    img_array_full = np.empty((len(cellpose_df), 256, 256, 3))
     for index in range(len(cellpose_df)):
-        single_cell_img = image_ndarray_sdh[
+        single_cell_img = histo_img[
             cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
             cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
         ]
@@ -94,9 +94,16 @@ def predict_all_cells(histo_img, cellpose_mask, cellpose_df):
         single_cell_mask = cellpose_df.iloc[index, 9]
         single_cell_img[~single_cell_mask] = 0
 
-        img_array[index] = tf.image.resize(single_cell_img, (256, 256))
+        img_array_full[index] = tf.image.resize(single_cell_img, (256, 256))
+    return img_array_full
 
-    prediction = model_SDH.predict(img_array)
+
+@st.experimental_memo
+def predict_all_cells(histo_img, cellpose_df, _model_SDH):
+    predicted_class_array = np.empty((len(cellpose_df)))
+    predicted_proba_array = np.empty((len(cellpose_df)))
+    img_array_full = resize_batch_cells(histo_img, cellpose_df)
+    prediction = _model_SDH.predict(img_array_full)
     index_counter = 0
     for prediction_result in prediction:
         predicted_class_array[index_counter] = prediction_result.argmax()
@@ -151,30 +158,26 @@ if uploaded_file_sdh is not None:
     st.header("SDH Cell Classification Results")
 
     class_predicted_all, proba_predicted_all = predict_all_cells(
-        image_ndarray_sdh, mask_cellpose, df_cellpose
+        image_ndarray_sdh, df_cellpose, model_SDH
     )
 
     count_per_label = np.unique(class_predicted_all, return_counts=True)
-    label_count = dict()
-
-    for index, label in enumerate(labels_predict):
-        label_count[count_per_label[0][index]] = count_per_label
-    class_predicted_all
+    class_and_proba_df = pd.DataFrame(
+        list(zip(class_predicted_all, proba_predicted_all)),
+        columns=["class", "proba"],
+    )
+    class_and_proba_df
     st.write("Total number of cells detected: ", len(class_predicted_all))
-    st.write(
-        "Number of cells classified as control: ",
-        count_per_label[1][0],
-        " ",
-        100 * count_per_label[1][0] / len(class_predicted_all),
-        "%",
-    )
-    st.write(
-        "Number of cells classified as sick: ",
-        count_per_label[1][1],
-        " ",
-        100 * count_per_label[1][1] / len(class_predicted_all),
-        "%",
-    )
+    for elem in count_per_label[0]:
+        st.write(
+            "Number of cells classified as ",
+            labels_predict[int(elem)],
+            ": ",
+            count_per_label[1][int(elem)],
+            " ",
+            100 * count_per_label[1][int(elem)] / len(class_predicted_all),
+            "%",
+        )
 
     st.header("Single Cell Grad-CAM")
     selected_fiber = st.selectbox("Select a cell", list(range(len(df_cellpose))))
@@ -187,7 +190,9 @@ if uploaded_file_sdh is not None:
     single_cell_mask = df_cellpose.iloc[selected_fiber, 9]
     single_cell_img[~single_cell_mask] = 0
 
-    grad_img, class_predicted, proba_predicted = predict_single_cell(single_cell_img)
+    grad_img, class_predicted, proba_predicted = predict_single_cell(
+        single_cell_img, model_SDH
+    )
 
     fig2, (ax1, ax2) = plt.subplots(1, 2)
     resized_single_cell_img = tf.image.resize(single_cell_img, (256, 256))

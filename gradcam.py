@@ -70,6 +70,6 @@ def save_and_display_gradcam(img, heatmap, cam_path="cam.jpg", alpha=0.5):
     jet_heatmap = tf.keras.preprocessing.image.img_to_array(jet_heatmap)
 
     # Superimpose the heatmap on original image
-    superimposed_img = jet_heatmap * alpha + img * 255
+    superimposed_img = jet_heatmap * alpha + img
     superimposed_img = tf.keras.preprocessing.image.array_to_img(superimposed_img)
     return superimposed_img
