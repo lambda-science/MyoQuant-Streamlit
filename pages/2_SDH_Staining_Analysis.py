@@ -8,6 +8,7 @@ except:
     from imageio import imread
 from skimage.measure import regionprops_table
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 from stardist import random_label_cmap
 import tensorflow as tf
@@ -89,9 +90,9 @@ def resize_batch_cells(histo_img, cellpose_df):
         single_cell_img = histo_img[
             cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
             cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
-        ]
+        ].copy()
 
-        single_cell_mask = cellpose_df.iloc[index, 9]
+        single_cell_mask = cellpose_df.iloc[index, 9].copy()
         single_cell_img[~single_cell_mask] = 0
 
         img_array_full[index] = tf.image.resize(single_cell_img, (256, 256))
@@ -110,6 +111,24 @@ def predict_all_cells(histo_img, cellpose_df, _model_SDH):
         predicted_proba_array[index_counter] = np.amax(prediction_result)
         index_counter += 1
     return predicted_class_array, predicted_proba_array
+
+
+@st.experimental_memo
+def paint_full_image(image_sdh, df_cellpose, class_predicted_all):
+    image_sdh_paint = np.zeros((image_sdh.shape[0], image_sdh.shape[1]), dtype=np.uint8)
+    for index in range(len(df_cellpose)):
+        single_cell_mask = df_cellpose.iloc[index, 9].copy()
+        if class_predicted_all[index] == 0:
+            image_sdh_paint[
+                df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
+                df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
+            ][single_cell_mask] = 1
+        elif class_predicted_all[index] == 1:
+            image_sdh_paint[
+                df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
+                df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
+            ][single_cell_mask] = 2
+    return image_sdh_paint
 
 
 model_cellpose = load_cellpose()
@@ -185,9 +204,9 @@ if uploaded_file_sdh is not None:
     single_cell_img = image_ndarray_sdh[
         df_cellpose.iloc[selected_fiber, 5] : df_cellpose.iloc[selected_fiber, 7],
         df_cellpose.iloc[selected_fiber, 6] : df_cellpose.iloc[selected_fiber, 8],
-    ]
+    ].copy()
 
-    single_cell_mask = df_cellpose.iloc[selected_fiber, 9]
+    single_cell_mask = df_cellpose.iloc[selected_fiber, 9].copy()
     single_cell_img[~single_cell_mask] = 0
 
     grad_img, class_predicted, proba_predicted = predict_single_cell(
@@ -209,3 +228,17 @@ if uploaded_file_sdh is not None:
     )
     ax2.set_xlabel(xlabel)
     st.pyplot(fig2)
+
+    st.header("Painted predicted image")
+    st.write(
+        "Green color indicates cells classified as control, red color indicates cells classified as sick"
+    )
+    paint_img = paint_full_image(image_ndarray_sdh, df_cellpose, class_predicted_all)
+    fig3, ax3 = plt.subplots(1, 1)
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        "", ["white", "green", "red"]
+    )
+    ax3.imshow(image_ndarray_sdh)
+    ax3.imshow(paint_img, cmap=cmap, alpha=0.5)
+    ax3.axis("off")
+    st.pyplot(fig3)
