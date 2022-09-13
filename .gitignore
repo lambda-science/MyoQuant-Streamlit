@@ -156,3 +156,5 @@ cython_debug/
 HistoQuant
 EHRoes
 *.h5
+log
+pid
