@@ -18,7 +18,7 @@ from skimage.draw import line
 import numpy as np
 
 st.set_page_config(
-    page_title="HistoQuant-Streamlit",
+    page_title="MyoQuant",
     page_icon="🔬",
 )
 

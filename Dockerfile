@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/lambda-science/HistoQuant-Streamlit.git .
+RUN git clone https://github.com/lambda-science/MyoQuant.git .
 RUN wget https://lbgi.fr/~meyer/SDH_models/model.h5
 
 RUN python -m pip install poetry

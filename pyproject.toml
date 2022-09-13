@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "histoquant-streamlit"
+name = "MyoQuant"
 version = "0.1.0"
 description = "Streamlit application code for my histology quantification project"
 authors = ["Corentin"]
