@@ -94,9 +94,6 @@ def run(
     else:
         console.print(f"SDH Model used: {model_path}", style="blue")
 
-    model_SDH = load_sdh_model(model_path)
-    console.print("SDH Model loaded !", style="blue")
-
     if cellpose_path is None:
         console.print(
             "No CellPose mask provided, will run CellPose during the analysis.",
@@ -124,6 +121,9 @@ def run(
         )
     else:
         mask_cellpose = imread(cellpose_path)
+
+    model_SDH = load_sdh_model(model_path)
+    console.print("SDH Model loaded !", style="blue")
     results_classification_dict, full_label_map = run_cli_analysis(
         image_ndarray_sdh, model_SDH, mask_cellpose
     )

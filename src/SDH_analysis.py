@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.config import list_physical_devices
 from tensorflow import keras
-
+import torch
 from gradcam import *
 from os import path
 from random_brightness import *
@@ -21,6 +21,8 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 np.random.seed(42)
 if len(list_physical_devices("GPU")) >= 1:
     use_GPU = True
+    tf.config.experimental.set_memory_growth(list_physical_devices("GPU")[0], True)
+
 else:
     use_GPU = False
 
@@ -41,12 +43,14 @@ def load_sdh_model(model_path):
     return model_sdh
 
 
+@torch.no_grad()
 def run_cellpose(image, model_cellpose, diameter=None):
     channel = [[0, 0]]
-    mask_cellpose, _, _, _ = model_cellpose.eval(
-        image, diameter=diameter, channels=channel
-    )
-    return mask_cellpose
+    with torch.no_grad():
+        mask_cellpose, _, _, _ = model_cellpose.eval(
+            image, diameter=diameter, channels=channel
+        )
+        return mask_cellpose
 
 
 def predict_single_cell(single_cell_img, _model_SDH):
