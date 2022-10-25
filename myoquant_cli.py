@@ -21,6 +21,7 @@ except:
     from imageio import imread
 
 console = Console()
+
 table = Table(title="Analysis Results")
 table.add_column("Feature", justify="left", style="cyan")
 table.add_column("Raw Count", justify="center", style="magenta")
@@ -31,6 +32,7 @@ app = typer.Typer(
     name="MyoQuant",
     add_completion=False,
     help="MyoQuant Analysis Command Line Interface",
+    pretty_exceptions_show_locals=False,
 )
 
 
@@ -117,24 +119,33 @@ def run(
         cellpose_mask_filename = image_path.stem + "_cellpose_mask.tiff"
         Image.fromarray(mask_cellpose).save(output_path / cellpose_mask_filename)
         console.print(
-            f"CellPose mask saved as {output_path/cellpose_mask_filename}", style="blue"
+            f"CellPose mask saved as {output_path/cellpose_mask_filename}",
+            style="green",
         )
     else:
         mask_cellpose = imread(cellpose_path)
 
     model_SDH = load_sdh_model(model_path)
     console.print("SDH Model loaded !", style="blue")
-    results_classification_dict, full_label_map = run_cli_analysis(
+    result_df, full_label_map = run_cli_analysis(
         image_ndarray_sdh, model_SDH, mask_cellpose
     )
     console.print("Analysis completed ! ", style="green")
-    for key in results_classification_dict:
+    for index, row in result_df.iterrows():
         table.add_row(
-            key,
-            str(results_classification_dict[key][0]),
-            str(results_classification_dict[key][1]),
+            str(row[0]),
+            str(row[1]),
+            str(row[2]),
         )
     console.print(table)
+    csv_name = image_path.stem + "_results.csv"
+    result_df.to_csv(
+        output_path / csv_name,
+        index=False,
+    )
+    console.print(
+        f"Table saved as a .csv file named {output_path/csv_name}", style="green"
+    )
     label_map_name = image_path.stem + "_label_map.tiff"
     Image.fromarray(full_label_map).save(output_path / label_map_name)
     console.print(

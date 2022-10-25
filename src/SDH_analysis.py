@@ -14,6 +14,8 @@ import torch
 from gradcam import *
 from os import path
 from random_brightness import *
+from rich.progress import track
+
 
 labels_predict = ["control", "sick"]
 tf.random.set_seed(42)
@@ -48,7 +50,7 @@ def run_cellpose(image, model_cellpose, diameter=None):
     channel = [[0, 0]]
     with torch.no_grad():
         mask_cellpose, _, _, _ = model_cellpose.eval(
-            image, diameter=diameter, channels=channel
+            image, batch_size=1, diameter=diameter, channels=channel
         )
         return mask_cellpose
 
@@ -68,7 +70,7 @@ def predict_single_cell(single_cell_img, _model_SDH):
 
 def resize_batch_cells(histo_img, cellpose_df):
     img_array_full = np.empty((len(cellpose_df), 256, 256, 3))
-    for index in range(len(cellpose_df)):
+    for index in track(range(len(cellpose_df)), description="Resizing cells"):
         single_cell_img = histo_img[
             cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
             cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
@@ -96,7 +98,7 @@ def predict_all_cells(histo_img, cellpose_df, _model_SDH):
 
 def paint_full_image(image_sdh, df_cellpose, class_predicted_all):
     image_sdh_paint = np.zeros((image_sdh.shape[0], image_sdh.shape[1]), dtype=np.uint8)
-    for index in range(len(df_cellpose)):
+    for index in track(range(len(df_cellpose)), description="Painting cells"):
         single_cell_mask = df_cellpose.iloc[index, 9].copy()
         if class_predicted_all[index] == 0:
             image_sdh_paint[
@@ -136,14 +138,18 @@ def run_cli_analysis(image_array, model_SDH, mask_cellpose):
     )
 
     # Result table dict
-    results_classification_dict = {}
-    results_classification_dict["Muscle Fibers"] = [len(class_predicted_all), 100]
+    headers = ["Feature", "Raw Count", "Proportion (%)"]
+    data = []
+    data.append(["Muscle Fibers", len(class_predicted_all), 100])
     for elem in count_per_label[0]:
-        results_classification_dict[labels_predict[int(elem)]] = [
-            count_per_label[1][int(elem)],
-            100 * count_per_label[1][int(elem)] / len(class_predicted_all),
-        ]
-
+        data.append(
+            [
+                labels_predict[int(elem)],
+                count_per_label[1][int(elem)],
+                100 * count_per_label[1][int(elem)] / len(class_predicted_all),
+            ]
+        )
+    result_df = pd.DataFrame(columns=headers, data=data)
     # Paint The Full Image
     full_label_map = paint_full_image(image_array, df_cellpose, class_predicted_all)
     # paint_fig, ax3 = plt.subplots(1, 1)
@@ -154,7 +160,7 @@ def run_cli_analysis(image_array, model_SDH, mask_cellpose):
     # ax3.imshow(full_label_map, cmap=cmap, alpha=0.5)
     # ax3.axis("off")
 
-    return results_classification_dict, full_label_map
+    return result_df, full_label_map
 
     # # Paint The Grad Cam
     # selected_fiber = st.selectbox("Select a cell", list(range(len(df_cellpose))))
