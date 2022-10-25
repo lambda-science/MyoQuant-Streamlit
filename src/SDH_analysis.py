@@ -142,15 +142,15 @@ def run_cli_analysis(image_array, model_SDH, mask_cellpose):
 
     # Paint The Full Image
     full_label_map = paint_full_image(image_array, df_cellpose, class_predicted_all)
-    paint_fig, ax3 = plt.subplots(1, 1)
-    cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-        "", ["white", "green", "red"]
-    )
-    ax3.imshow(image_array)
-    ax3.imshow(full_label_map, cmap=cmap, alpha=0.5)
-    ax3.axis("off")
+    # paint_fig, ax3 = plt.subplots(1, 1)
+    # cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+    #     "", ["white", "green", "red"]
+    # )
+    # ax3.imshow(image_array)
+    # ax3.imshow(full_label_map, cmap=cmap, alpha=0.5)
+    # ax3.axis("off")
 
-    return results_classification_dict, full_label_map, paint_fig
+    return results_classification_dict, full_label_map
 
     # # Paint The Grad Cam
     # selected_fiber = st.selectbox("Select a cell", list(range(len(df_cellpose))))

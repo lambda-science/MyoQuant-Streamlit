@@ -58,12 +58,21 @@ def run(
         help="The pre-computed CellPose mask to use for analysis. Will run Cellpose if no path provided. Required as an image file.",
         callback=check_file_exists,
     ),
+    output_path: Path = typer.Option(
+        None,
+        help="The path to the folder to save the results. Will save in the current folder if not specified.",
+    ),
 ):
     """Run the SDH analysis and quantification on the image."""
 
     console.print(f"Welcome to the SDH Analysis CLI tools.", style="magenta")
     console.print(f"Running SDH Quantification on image : {image_path}", style="blue")
     start_time = time.time()
+
+    if output_path is None:
+        output_path = image_path.parents[0]
+    else:
+        Path(output_path).mkdir(parents=True, exist_ok=True)
 
     if is_gpu_availiable():
         console.print(f"GPU is available.", style="green")
@@ -103,11 +112,13 @@ def run(
         mask_cellpose = run_cellpose(image_ndarray_sdh, model_cellpose)
         mask_cellpose = mask_cellpose.astype(np.uint16)
         cellpose_mask_filename = image_path.stem + "_cellpose_mask.tiff"
-        Image.fromarray(mask_cellpose).save(cellpose_mask_filename)
-        console.print(f"CellPose mask saved as {cellpose_mask_filename}", style="blue")
+        Image.fromarray(mask_cellpose).save(output_path / cellpose_mask_filename)
+        console.print(
+            f"CellPose mask saved as {output_path/cellpose_mask_filename}", style="blue"
+        )
     else:
         mask_cellpose = imread(cellpose_path)
-    results_classification_dict, full_label_map, paint_fig = run_cli_analysis(
+    results_classification_dict, full_label_map = run_cli_analysis(
         image_ndarray_sdh, model_SDH, mask_cellpose
     )
     console.print("Analysis completed ! ", style="green")
@@ -119,11 +130,15 @@ def run(
         )
     console.print(table)
     label_map_name = image_path.stem + "_label_map.tiff"
-    Image.fromarray(full_label_map).save(label_map_name)
-    console.print(f"Labelled image saved as {label_map_name}", style="green")
+    Image.fromarray(full_label_map).save(output_path / label_map_name)
+    console.print(
+        f"Labelled image saved as {output_path/label_map_name}", style="green"
+    )
     painted_img_name = image_path.stem + "_painted.tiff"
-    paint_fig.savefig(painted_img_name, bbox_inches="tight")
-    console.print(f"Painted image saved as {painted_img_name}", style="green")
+    # paint_fig.savefig(output_path / painted_img_name, bbox_inches="tight")
+    # console.print(
+    #     f"Painted image saved as {output_path/painted_img_name}", style="green"
+    # )
     console.print("--- %s seconds ---" % (time.time() - start_time))
 
 
