@@ -158,3 +158,10 @@ EHRoes
 *.h5
 log
 pid
+*.npy
+*.tiff
+*.npz
+*.jpg
+*.csv
+*.png
+*.tif
