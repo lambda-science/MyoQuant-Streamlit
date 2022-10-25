@@ -62,6 +62,10 @@ def run(
         None,
         help="The path to the folder to save the results. Will save in the current folder if not specified.",
     ),
+    cellpose_diameter: int = typer.Option(
+        None,
+        help="Approximative single cell diameter in pixel for CellPose detection. If not specified, Cellpose will try to deduce it.",
+    ),
 ):
     """Run the SDH analysis and quantification on the image."""
 
@@ -109,7 +113,9 @@ def run(
     console.print("Starting the Analysis. This may take a while...", style="blue")
     if cellpose_path is None:
         console.print("Running CellPose...", style="blue")
-        mask_cellpose = run_cellpose(image_ndarray_sdh, model_cellpose)
+        mask_cellpose = run_cellpose(
+            image_ndarray_sdh, model_cellpose, cellpose_diameter
+        )
         mask_cellpose = mask_cellpose.astype(np.uint16)
         cellpose_mask_filename = image_path.stem + "_cellpose_mask.tiff"
         Image.fromarray(mask_cellpose).save(output_path / cellpose_mask_filename)

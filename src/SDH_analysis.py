@@ -41,10 +41,10 @@ def load_sdh_model(model_path):
     return model_sdh
 
 
-def run_cellpose(image, model_cellpose):
+def run_cellpose(image, model_cellpose, diameter=None):
     channel = [[0, 0]]
-    mask_cellpose, flow, style, diam = model_cellpose.eval(
-        image, diameter=None, channels=channel
+    mask_cellpose, _, _, _ = model_cellpose.eval(
+        image, diameter=diameter, channels=channel
     )
     return mask_cellpose
 
