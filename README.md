@@ -32,4 +32,4 @@ For SDH Staining analysis, you can download this sample image: [HERE](https://ww
 ## Who and how
 
 - Creator and Maintainer: [Corentin Meyer, 3rd year PhD Student in the CSTB Team, ICube — CNRS — Unistra](https://lambda-science.github.io/)
-- The source code for this application is available [HERE](https://github.com/lambda-science/MyoQuant)
+- The source code for MyoQuant is available [HERE](https://github.com/lambda-science/MyoQuant), for the demo website it is available [HERE](https://github.com/lambda-science/MyoQuant-Streamlit)
