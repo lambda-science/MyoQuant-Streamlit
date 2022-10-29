@@ -1,6 +1,6 @@
-# MyoQuant-Streamlit
+# MyoQuant-Streamlit🔬
 
-MyoQuant-Streamlit is a demo web application to showcase usage of MyoQuant.
+MyoQuant-Streamlit🔬 is a demo web application to showcase usage of MyoQuant.
 MyoQuant is a command line tool to quantify pathological feature in histology images.
 It is built using CellPose, Stardist, custom neural-network models and image analysis techniques to automatically analyze myopathy histology images.
 This web application is intended for demonstration purposes only.
