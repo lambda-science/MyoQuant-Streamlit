@@ -7,7 +7,7 @@
 MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of MyoQuant.
 
 <p align="center">
-  <img src="https://i.imgur.com/mzALgZL.png" alt="IMPatienT Banner" style="border-radius: 25px;" />
+  <img src="https://i.imgur.com/mzALgZL.png" alt="MyoQuant Banner" style="border-radius: 25px;" />
 </p>
 
 MyoQuant🔬 is a command-line tool to automatically quantify pathological features in muscle fiber histology images.  
