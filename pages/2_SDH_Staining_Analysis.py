@@ -26,7 +26,7 @@ tf.random.set_seed(42)
 np.random.seed(42)
 
 st.set_page_config(
-    page_title="MyoQuant",
+    page_title="MyoQuant SDH Analysis",
     page_icon="🔬",
 )
 

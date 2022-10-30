@@ -5,19 +5,17 @@ st.set_page_config(
     page_icon="🔬",
 )
 
-st.write("# Welcome to MyoQuant-Streamlit ! 👋")
+st.write("# Welcome to MyoQuant-Streamlit 👋")
 
 st.sidebar.success("Select the corresponding staining analysis above.")
 
 st.markdown(
     """
-# MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of [MyoQuant](https://github.com/lambda-science/MyoQuant). 
+## MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of [MyoQuant](https://github.com/lambda-science/MyoQuant). 
 
-<p align="center">
-  <img src="https://i.imgur.com/mzALgZL.png" alt="IMPatienT Banner" style="border-radius: 25px;" />
-</p>
+![MyoQuant Banner](https://i.imgur.com/mzALgZL.png)
 
-[MyoQuant🔬 is a command-line tool to automatically quantify pathological features in muscle fiber histology images.](https://github.com/lambda-science/MyoQuant)
+[MyoQuant🔬 is a command-line tool to automatically quantify pathological features in muscle fiber histology images.](https://github.com/lambda-science/MyoQuant)  
 It is built using CellPose, Stardist, custom neural-network models and image analysis techniques to automatically analyze myopathy histology images. Currently MyoQuant is capable of quantifying centralization of nuclei in muscle fiber with HE staining and anomaly in the mitochondria distribution in muscle fibers with SDH staining.  
 This web application is intended for demonstration purposes only.  
 
@@ -33,10 +31,7 @@ The source code for MyoQuant is available [HERE](https://github.com/lambda-scien
 
 ## Partners
 
-<p align="center">
-  <img src="https://i.imgur.com/m5OGthE.png" alt="Partner Banner" style="border-radius: 25px;" />
-</p>
-
-IMPatienT is born within the collaboration between the [CSTB Team @ ICube](https://cstb.icube.unistra.fr/en/index.php/Home) led by Julie D. Thompson, the [Morphological Unit of the Institute of Myology of Paris](https://www.institut-myologie.org/en/recherche-2/neuromuscular-investigation-center/morphological-unit/) led by Teresinha Evangelista, the [imagery platform MyoImage of Center of Research in Myology](https://recherche-myologie.fr/technologies/myoimage/) led by Bruno Cadot, [the photonic microscopy platform of the IGMBC](https://www.igbmc.fr/en/plateformes-technologiques/photonic-microscopy) led by Bertrand Vernay and the [Pathophysiology of neuromuscular diseases team @ IGBMC](https://www.igbmc.fr/en/igbmc/a-propos-de-ligbmc/directory/jocelyn-laporte) led by Jocelyn Laporte  
+![Partners Banner](https://i.imgur.com/Xk9wBFQ.png)  
+IMPatienT is born within the collaboration between the [CSTB Team @ ICube](https://cstb.icube.unistra.fr/en/index.php/Home) led by Julie D. Thompson, the [Morphological Unit of the Institute of Myology of Paris](https://www.institut-myologie.org/en/recherche-2/neuromuscular-investigation-center/morphological-unit/) led by Teresinha Evangelista, the [imagery platform MyoImage of Center of Research in Myology](https://recherche-myologie.fr/technologies/myoimage/) led by Bruno Cadot, [the photonic microscopy platform of the IGMBC](https://www.igbmc.fr/en/plateformes-technologiques/photonic-microscopy) led by Bertrand Vernay and the [Pathophysiology of neuromuscular diseases team @ IGBMC](https://www.igbmc.fr/en/igbmc/a-propos-de-ligbmc/directory/jocelyn-laporte) led by Jocelyn Laporte.  
 """
 )

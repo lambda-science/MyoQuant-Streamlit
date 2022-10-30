@@ -1,9 +1,11 @@
 ![Twitter Follow](https://img.shields.io/twitter/follow/corentinm_py?style=social) ![Demo Version](https://img.shields.io/badge/Demo-https%3A%2F%2Flbgi.fr%2FMyoQuant%2F-9cf) ![PyPi](https://img.shields.io/badge/PyPi-https%3A%2F%2Fpypi.org%2Fproject%2Fmyoquant%2F-blueviolet) ![Pypi verison](https://img.shields.io/pypi/v/myoquant)
+
 # MyoQuant-Streamlit🔬: a demo web interface for the MyoQuant tool.
 
-## Please refer to the [MyoQuant GitHub Repository](https://github.com/lambda-science/MyoQuant) or the [MyoQuant PyPi repository](https://pypi.org/project/myoquant/) for full documentation.  
+## Please refer to the [MyoQuant GitHub Repository](https://github.com/lambda-science/MyoQuant) or the [MyoQuant PyPi repository](https://pypi.org/project/myoquant/) for full documentation.
 
-MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of MyoQuant. 
+MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of MyoQuant.
+
 <p align="center">
   <img src="https://i.imgur.com/mzALgZL.png" alt="IMPatienT Banner" style="border-radius: 25px;" />
 </p>
@@ -36,13 +38,14 @@ Once on the demo, click on the corresponding staining analysis on the sidebar, a
 For HE Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_he.jpg)  
 For SDH Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_sdh.jpg)
 
-
 ## Contact
-Creator and Maintainer: [**Corentin Meyer**, 3rd year PhD Student in the CSTB Team, ICube — CNRS — Unistra](https://lambda-science.github.io/)  <corentin.meyer@etu.unistra.fr>  
+
+Creator and Maintainer: [**Corentin Meyer**, 3rd year PhD Student in the CSTB Team, ICube — CNRS — Unistra](https://lambda-science.github.io/) <corentin.meyer@etu.unistra.fr>  
 The source code for MyoQuant is available [HERE](https://github.com/lambda-science/MyoQuant), for the demo website it is available [HERE](https://github.com/lambda-science/MyoQuant-Streamlit)
 
 ## Citing MyoQuant🔬
-[placeholder]  
+
+[placeholder]
 
 ## Partners
 

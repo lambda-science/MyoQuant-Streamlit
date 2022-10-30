@@ -18,7 +18,7 @@ from skimage.draw import line
 import numpy as np
 
 st.set_page_config(
-    page_title="MyoQuant",
+    page_title="MyoQuant HE Analysis",
     page_icon="🔬",
 )
 
