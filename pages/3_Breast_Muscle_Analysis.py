@@ -416,7 +416,7 @@ if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     painted_img = paint_histo_img(image_ndarray_cyto, df_cellpose, df_nuc_analysis)
     fig3, ax3 = plt.subplots(1, 1)
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-        "", ["white", "red", "green"]
+        "", ["white", "green", "red"]
     )
     ax3.imshow(mergedarrays)
     ax3.imshow(painted_img, cmap=cmap, alpha=0.5)
