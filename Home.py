@@ -23,7 +23,8 @@ This web application is intended for demonstration purposes only.
 
 Once on the demo, click on the corresponding staining analysis on the sidebar, and upload your histology image. Results will be displayed in the main area automatically.  
 For HE Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_he.jpg)  
-For SDH Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_sdh.jpg)
+For SDH Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_sdh.jpg)  
+For Breast Muscle Regeneration analysis, you can download this cytoplasm sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/cytoplasmes.tif) and this nuclei sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/noyaux.tif)
 
 ## Contact
 Creator and Maintainer: [**Corentin Meyer**, 3rd year PhD Student in the CSTB Team, ICube — CNRS — Unistra](https://lambda-science.github.io/)  <corentin.meyer@etu.unistra.fr>  
