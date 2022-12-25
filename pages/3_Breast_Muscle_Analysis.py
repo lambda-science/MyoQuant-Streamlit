@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.components.v1 import html
 from cellpose import models, core
 from stardist.models import StarDist2D
 from csbdeep.utils import normalize
@@ -422,3 +423,9 @@ if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     ax3.imshow(painted_img, cmap=cmap, alpha=0.5)
     ax3.axis("off")
     st.pyplot(fig3)
+
+html(
+    f"""
+    <script defer data-domain="lbgi.fr/myoquant" src="https://plausible.cmeyer.fr/js/script.js"></script>
+    """
+)

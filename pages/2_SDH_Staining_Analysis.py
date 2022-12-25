@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.components.v1 import html
 from cellpose.core import use_gpu
 from cellpose.models import Cellpose
 
@@ -242,3 +243,9 @@ if uploaded_file_sdh is not None:
     ax3.imshow(paint_img, cmap=cmap, alpha=0.5)
     ax3.axis("off")
     st.pyplot(fig3)
+
+html(
+    f"""
+    <script defer data-domain="lbgi.fr/myoquant" src="https://plausible.cmeyer.fr/js/script.js"></script>
+    """
+)
