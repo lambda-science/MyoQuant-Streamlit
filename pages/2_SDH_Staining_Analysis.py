@@ -1,7 +1,5 @@
 import streamlit as st
 from streamlit.components.v1 import html
-from cellpose.core import use_gpu
-from cellpose.models import Cellpose
 
 try:
     from imageio.v2 import imread
@@ -11,10 +9,8 @@ from skimage.measure import regionprops_table
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-from stardist import random_label_cmap
 import tensorflow as tf
 from tensorflow.config import list_physical_devices
-from tensorflow import keras
 
 from gradcam import *
 from os import path
@@ -45,92 +41,6 @@ if len(list_physical_devices("GPU")) >= 1:
     use_GPU = True
 else:
     use_GPU = False
-
-
-@st.experimental_singleton
-def load_cellpose():
-    model_c = Cellpose(gpu=use_GPU, model_type="cyto2")
-    return model_c
-
-
-@st.experimental_singleton
-def load_sdh_model():
-    model_sdh = keras.models.load_model(
-        "model.h5", custom_objects={"RandomBrightness": RandomBrightness}
-    )
-    return model_sdh
-
-
-@st.experimental_memo
-def run_cellpose(image):
-    channel = [[0, 0]]
-    mask_cellpose, flow, style, diam = model_cellpose.eval(
-        image, diameter=None, channels=channel
-    )
-    return mask_cellpose
-
-
-@st.experimental_memo
-def predict_single_cell(single_cell_img, _model_SDH):
-    img_array = np.empty((1, 256, 256, 3))
-    img_array[0] = tf.image.resize(single_cell_img, (256, 256))
-    prediction = _model_SDH.predict(img_array)
-    predicted_class = prediction.argmax()
-    predicted_proba = round(np.amax(prediction), 2)
-    heatmap = make_gradcam_heatmap(
-        img_array, _model_SDH.get_layer("resnet50v2"), "conv5_block3_3_conv"
-    )
-    grad_cam_img = save_and_display_gradcam(img_array[0], heatmap)
-    return grad_cam_img, predicted_class, predicted_proba
-
-
-@st.experimental_memo
-def resize_batch_cells(histo_img, cellpose_df):
-    img_array_full = np.empty((len(cellpose_df), 256, 256, 3))
-    for index in range(len(cellpose_df)):
-        single_cell_img = histo_img[
-            cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
-            cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
-        ].copy()
-
-        single_cell_mask = cellpose_df.iloc[index, 9].copy()
-        single_cell_img[~single_cell_mask] = 0
-
-        img_array_full[index] = tf.image.resize(single_cell_img, (256, 256))
-    return img_array_full
-
-
-@st.experimental_memo
-def predict_all_cells(histo_img, cellpose_df, _model_SDH):
-    predicted_class_array = np.empty((len(cellpose_df)))
-    predicted_proba_array = np.empty((len(cellpose_df)))
-    img_array_full = resize_batch_cells(histo_img, cellpose_df)
-    prediction = _model_SDH.predict(img_array_full)
-    index_counter = 0
-    for prediction_result in prediction:
-        predicted_class_array[index_counter] = prediction_result.argmax()
-        predicted_proba_array[index_counter] = np.amax(prediction_result)
-        index_counter += 1
-    return predicted_class_array, predicted_proba_array
-
-
-@st.experimental_memo
-def paint_full_image(image_sdh, df_cellpose, class_predicted_all):
-    image_sdh_paint = np.zeros((image_sdh.shape[0], image_sdh.shape[1]), dtype=np.uint8)
-    for index in range(len(df_cellpose)):
-        single_cell_mask = df_cellpose.iloc[index, 9].copy()
-        if class_predicted_all[index] == 0:
-            image_sdh_paint[
-                df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
-                df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
-            ][single_cell_mask] = 1
-        elif class_predicted_all[index] == 1:
-            image_sdh_paint[
-                df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
-                df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
-            ][single_cell_mask] = 2
-    return image_sdh_paint
-
 
 model_cellpose = load_cellpose()
 
