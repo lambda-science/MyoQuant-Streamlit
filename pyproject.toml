@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "MyoQuant-Streamlit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Streamlit demo version of the MyoQuant tool"
 authors = ["Corentin"]
 license = "AGPL"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-myoquant = { file = "../MyoQuant/dist/myoquant-0.3.1-py3-none-any.whl" }
+myoquant = "^0.3.1"
 streamlit = "^1.12.0"
 pyngrok = "^5.1.0"
 imageio = "^2.21.1"
