@@ -1,30 +1,31 @@
 import streamlit as st
 from streamlit.components.v1 import html
-from cellpose.core import use_gpu
-from cellpose.models import Cellpose
+import matplotlib
 
 try:
     from imageio.v2 import imread
 except:
     from imageio import imread
-from skimage.measure import regionprops_table
-import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
-from os import path
-from skimage.measure import regionprops_table
-from scipy.stats import gaussian_kde
-from sklearn.mixture import GaussianMixture
-from tensorflow.config import list_physical_devices
+import pandas as pd
 import numpy as np
+from myoquant.src.common_func import (
+    load_cellpose,
+    run_cellpose,
+    is_gpu_availiable,
+    df_from_cellpose_mask,
+)
+from myoquant.src.ATP_analysis import (
+    get_all_intensity,
+    estimate_threshold,
+    plot_density,
+    predict_all_cells,
+    paint_full_image,
+)
 
 labels_predict = {1: "fiber type 1", 2: "fiber type 2"}
 
-if len(list_physical_devices("GPU")) >= 1:
-    use_GPU = True
-else:
-    use_GPU = False
-
+use_GPU = is_gpu_availiable()
 np.random.seed(42)
 
 st.set_page_config(
@@ -34,108 +35,46 @@ st.set_page_config(
 
 
 @st.experimental_singleton
-def load_cellpose():
-    model_c = Cellpose(gpu=use_GPU, model_type="cyto2")
-    return model_c
+def st_load_cellpose():
+    return load_cellpose()
 
 
 @st.experimental_memo
-def run_cellpose(image):
-    channel = [[0, 0]]
-    mask_cellpose, flow, style, diam = model_cellpose.eval(
-        image, diameter=None, channels=channel
-    )
-    return mask_cellpose
+def st_run_cellpose(image_atp, _model):
+    return run_cellpose(image_atp, _model)
 
 
 @st.experimental_memo
-def get_all_intensity(image_array, df_cellpose):
-    all_cell_median_intensity = []
-    for index in range(len(df_cellpose)):
-        single_cell_img = image_array[
-            df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
-            df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
-        ].copy()
-
-        single_cell_mask = df_cellpose.iloc[index, 9].copy()
-        single_cell_img[~single_cell_mask] = 0
-        # Calculate median pixel intensity of the cell but ignore 0 values
-        single_cell_median_intensity = np.median(single_cell_img[single_cell_img > 0])
-        all_cell_median_intensity.append(single_cell_median_intensity)
-    return all_cell_median_intensity
+def st_df_from_cellpose_mask(mask):
+    return df_from_cellpose_mask(mask)
 
 
 @st.experimental_memo
-def estimate_threshold(intensity_list):
-    density = gaussian_kde(intensity_list)
-    density.covariance_factor = lambda: 0.25
-    density._compute_covariance()
-
-    # Create a vector of 256 values going from 0 to 256:
-    xs = np.linspace(0, 255, 256)
-    density_xs_values = density(xs)
-    gmm = GaussianMixture(n_components=2).fit(np.array(intensity_list).reshape(-1, 1))
-
-    # Find the x values of the two peaks
-    peaks_x = np.sort(gmm.means_.flatten())
-    # Find the minimum point between the two peaks
-    min_index = np.argmin(density_xs_values[(xs > peaks_x[0]) & (xs < peaks_x[1])])
-    threshold = peaks_x[0] + xs[min_index]
-
-    return threshold
+def st_get_all_intensity(image_atp, df_cellpose):
+    return get_all_intensity(image_atp, df_cellpose)
 
 
 @st.experimental_memo
-def predict_all_cells(histo_img, cellpose_df, intensity_threshold):
-    all_cell_median_intensity = get_all_intensity(histo_img, cellpose_df)
-    if intensity_threshold == 0:
-        intensity_threshold = estimate_threshold(all_cell_median_intensity)
-
-    muscle_fiber_type_all = [
-        1 if x > intensity_threshold else 2 for x in all_cell_median_intensity
-    ]
-    return muscle_fiber_type_all, all_cell_median_intensity
+def st_estimate_threshold(intensity_list):
+    return estimate_threshold(intensity_list)
 
 
 @st.experimental_memo
-def paint_full_image(image_ATP, df_cellpose, class_predicted_all):
-    image_ATP_paint = np.zeros((image_ATP.shape[0], image_ATP.shape[1]), dtype=np.uint8)
-    for index in range(len(df_cellpose)):
-        single_cell_mask = df_cellpose.iloc[index, 9].copy()
-        if class_predicted_all[index] == 1:
-            image_ATP_paint[
-                df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
-                df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
-            ][single_cell_mask] = 1
-        elif class_predicted_all[index] == 2:
-            image_ATP_paint[
-                df_cellpose.iloc[index, 5] : df_cellpose.iloc[index, 7],
-                df_cellpose.iloc[index, 6] : df_cellpose.iloc[index, 8],
-            ][single_cell_mask] = 2
-    return image_ATP_paint
+def st_plot_density(all_cell_median_intensity, intensity_threshold):
+    return plot_density(all_cell_median_intensity, intensity_threshold)
 
 
 @st.experimental_memo
-def plot_density(all_cell_median_intensity, intensity_threshold):
-    if intensity_threshold == 0:
-        intensity_threshold = estimate_threshold(all_cell_median_intensity)
-    fig, ax = plt.subplots(figsize=(10, 5))
-    density = gaussian_kde(all_cell_median_intensity)
-    density.covariance_factor = lambda: 0.25
-    density._compute_covariance()
-
-    # Create a vector of 256 values going from 0 to 256:
-    xs = np.linspace(0, 255, 256)
-    density_xs_values = density(xs)
-    ax.plot(xs, density_xs_values, label="Estimated Density")
-    ax.axvline(x=intensity_threshold, color="red", label="Threshold")
-    ax.set_xlabel("Pixel Intensity")
-    ax.set_ylabel("Density")
-    ax.legend()
-    return fig
+def st_predict_all_cells(image_atp, cellpose_df, intensity_threshold):
+    return predict_all_cells(image_atp, cellpose_df, intensity_threshold)
 
 
-model_cellpose = load_cellpose()
+@st.experimental_memo
+def st_paint_full_image(image_atp, df_cellpose, class_predicted_all):
+    return paint_full_image(image_atp, df_cellpose, class_predicted_all)
+
+
+model_cellpose = st_load_cellpose()
 
 with st.sidebar:
     st.write("Threshold Parameters")
@@ -154,7 +93,7 @@ if uploaded_file_atp is not None:
     st.write("Raw Image")
     image = st.image(uploaded_file_atp)
 
-    mask_cellpose = run_cellpose(image_ndarray_atp)
+    mask_cellpose = st_run_cellpose(image_ndarray_atp, model_cellpose)
 
     st.header("Segmentation Results")
     st.subheader("CellPose results")
@@ -163,40 +102,41 @@ if uploaded_file_atp is not None:
     ax.axis("off")
     st.pyplot(fig)
 
-    st.subheader("All cells detected by CellPose")
+    df_cellpose = st_df_from_cellpose_mask(mask_cellpose)
 
-    props_cellpose = regionprops_table(
-        mask_cellpose,
-        properties=[
-            "label",
-            "area",
-            "centroid",
-            "eccentricity",
-            "bbox",
-            "image",
-            "perimeter",
-        ],
-    )
-    df_cellpose = pd.DataFrame(props_cellpose)
-    st.dataframe(df_cellpose.drop("image", axis=1))
     st.header("Cell Intensity Plot")
-    all_cell_median_intensity = get_all_intensity(image_ndarray_atp, df_cellpose)
-    figure_intensity = plot_density(all_cell_median_intensity, intensity_threshold)
+    all_cell_median_intensity = st_get_all_intensity(image_ndarray_atp, df_cellpose)
+    figure_intensity = st_plot_density(all_cell_median_intensity, intensity_threshold)
     st.pyplot(figure_intensity)
 
     st.header("ATP Cell Classification Results")
+    if intensity_threshold == 0:
+        muscle_fiber_type_all, all_cell_median_intensity = st_predict_all_cells(
+            image_ndarray_atp, df_cellpose, intensity_threshold=None
+        )
+    else:
+        muscle_fiber_type_all, all_cell_median_intensity = st_predict_all_cells(
+            image_ndarray_atp, df_cellpose, intensity_threshold=intensity_threshold
+        )
+    df_cellpose["muscle_fiber_type"] = muscle_fiber_type_all
+    df_cellpose["median_intensity"] = all_cell_median_intensity
+    count_per_label = np.unique(muscle_fiber_type_all, return_counts=True)
 
-    class_predicted_all, proba_predicted_all = predict_all_cells(
-        image_ndarray_atp, df_cellpose, intensity_threshold
+    st.dataframe(
+        df_cellpose.drop(
+            [
+                "centroid-0",
+                "centroid-1",
+                "bbox-0",
+                "bbox-1",
+                "bbox-2",
+                "bbox-3",
+                "image",
+            ],
+            axis=1,
+        )
     )
-
-    count_per_label = np.unique(class_predicted_all, return_counts=True)
-    class_and_proba_df = pd.DataFrame(
-        list(zip(class_predicted_all, proba_predicted_all)),
-        columns=["Muscle Fiber Type", "Intensity"],
-    )
-    class_and_proba_df
-    st.write("Total number of cells detected: ", len(class_predicted_all))
+    st.write("Total number of cells detected: ", len(muscle_fiber_type_all))
     for index, elem in enumerate(count_per_label[0]):
         st.write(
             "Number of cells classified as ",
@@ -204,7 +144,7 @@ if uploaded_file_atp is not None:
             ": ",
             count_per_label[1][int(index)],
             " ",
-            100 * count_per_label[1][int(index)] / len(class_predicted_all),
+            100 * count_per_label[1][int(index)] / len(muscle_fiber_type_all),
             "%",
         )
 
@@ -212,7 +152,9 @@ if uploaded_file_atp is not None:
     st.write(
         "Green color indicates cells classified as control, red color indicates cells classified as sick"
     )
-    paint_img = paint_full_image(image_ndarray_atp, df_cellpose, class_predicted_all)
+    paint_img = st_paint_full_image(
+        image_ndarray_atp, df_cellpose, muscle_fiber_type_all
+    )
     fig3, ax3 = plt.subplots(1, 1)
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
         "", ["white", "green", "red"]

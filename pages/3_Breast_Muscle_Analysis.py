@@ -1,205 +1,110 @@
 import streamlit as st
 from streamlit.components.v1 import html
-from cellpose import models, core
-from stardist.models import StarDist2D
-from csbdeep.utils import normalize
 import matplotlib
 
 try:
     from imageio.v2 import imread
 except:
     from imageio import imread
-from skimage.measure import regionprops_table
-import pandas as pd
 import matplotlib.pyplot as plt
 from stardist import random_label_cmap
-from tensorflow.config import list_physical_devices
-from draw_line import *
-from skimage.draw import line
 import numpy as np
+
+from myoquant.src.common_func import (
+    load_cellpose,
+    load_stardist,
+    run_cellpose,
+    run_stardist,
+    is_gpu_availiable,
+    df_from_cellpose_mask,
+    df_from_stardist_mask,
+)
+from myoquant.src.HE_analysis import (
+    predict_all_cells,
+    extract_ROIs,
+    single_cell_analysis,
+    paint_histo_img,
+)
+
 
 st.set_page_config(
     page_title="MyoQuant Breast Analysis",
     page_icon="🔬",
 )
 
-if len(list_physical_devices("GPU")) >= 1:
-    use_GPU = True
-else:
-    use_GPU = False
+use_GPU = is_gpu_availiable()
 
 
 @st.experimental_singleton
-def load_cellpose():
-    model_c = models.Cellpose(gpu=use_GPU, model_type="cyto2")
-    return model_c
+def st_load_cellpose():
+    return load_cellpose()
 
 
 @st.experimental_singleton
-def load_stardist_fluo():
-    model_s_fluo = StarDist2D.from_pretrained("2D_versatile_fluo")
-    return model_s_fluo
+def st_load_stardist(fluo=False):
+    return load_stardist(fluo)
 
 
 @st.experimental_memo
-def run_cellpose(image):
-    channel = [[0, 0]]
-    mask_cellpose, flow, style, diam = model_cellpose.eval(
-        image, diameter=None, channels=channel
+def st_run_cellpose(image_ndarray, _model):
+    return run_cellpose(image_ndarray, _model)
+
+
+@st.experimental_memo
+def st_run_stardist(image_ndarray, _model, nms_thresh, prob_thresh):
+    return run_stardist(image_ndarray, _model, nms_thresh, prob_thresh)
+
+
+@st.experimental_memo
+def st_df_from_cellpose_mask(mask):
+    return df_from_cellpose_mask(mask)
+
+
+@st.experimental_memo
+def st_df_from_stardist_mask(mask):
+    return df_from_stardist_mask(mask)
+
+
+@st.experimental_memo
+def st_predict_all_cells(
+    image_ndarray, df_cellpose, mask_stardist, internalised_threshold
+):
+    return predict_all_cells(
+        image_ndarray, df_cellpose, mask_stardist, internalised_threshold
     )
-    return mask_cellpose
 
 
 @st.experimental_memo
-def run_stardist(image, nms_thresh=0.4, prob_thresh=0.5):
-    img_norm = image / 255
-    img_norm = normalize(img_norm, 1, 99.8)
-    mask_stardist, _ = model_stardist_fluo.predict_instances(
-        img_norm, nms_thresh=nms_thresh, prob_thresh=prob_thresh
-    )
-    return mask_stardist
+def st_extract_ROIs(image_ndarray, selected_fiber, df_cellpose, mask_stardist):
+    return extract_ROIs(image_ndarray, selected_fiber, df_cellpose, mask_stardist)
 
 
 @st.experimental_memo
-def extract_ROIs(histo_img, index, cellpose_df, mask_stardist):
-    single_cell_img = histo_img[
-        cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
-        cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
-    ].copy()
-    nucleus_single_cell_img = mask_stardist[
-        cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
-        cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
-    ].copy()
-    single_cell_mask = cellpose_df.iloc[index, 9]
-    single_cell_img[~single_cell_mask] = 0
-    nucleus_single_cell_img[~single_cell_mask] = 0
-
-    props_nuc_single = regionprops_table(
-        nucleus_single_cell_img,
-        intensity_image=single_cell_img,
-        properties=[
-            "label",
-            "area",
-            "centroid",
-            "eccentricity",
-            "bbox",
-            "image",
-            "perimeter",
-        ],
-    )
-    df_nuc_single = pd.DataFrame(props_nuc_single)
-    return single_cell_img, nucleus_single_cell_img, single_cell_mask, df_nuc_single
-
-
-@st.experimental_memo
-def single_cell_analysis(
+def st_single_cell_analysis(
     single_cell_img,
     single_cell_mask,
     df_nuc_single,
     x_fiber,
     y_fiber,
-    internalised_threshold=0.75,
+    selected_fiber,
+    internalised_threshold,
+    draw_and_return=True,
 ):
-    n_nuc, n_nuc_intern, n_nuc_periph = 0, 0, 0
-    for _, value in df_nuc_single.iterrows():
-        n_nuc += 1
-        # Extend line and find closest point
-        m, b = line_equation(x_fiber, y_fiber, value[3], value[2])
-
-        intersections_lst = calculate_intersection(
-            m, b, (single_cell_img.shape[0], single_cell_img.shape[1])
-        )
-        border_point = calculate_closest_point(value[3], value[2], intersections_lst)
-        rr, cc = line(
-            int(y_fiber),
-            int(x_fiber),
-            int(border_point[1]),
-            int(border_point[0]),
-        )
-        for index3, coords in enumerate(list(zip(rr, cc))):
-            try:
-                if single_cell_mask[coords] == 0:
-                    dist_nuc_cent = calculate_distance(
-                        x_fiber, y_fiber, value[3], value[2]
-                    )
-                    dist_out_of_fiber = calculate_distance(
-                        x_fiber, y_fiber, coords[1], coords[0]
-                    )
-                    ratio_dist = dist_nuc_cent / dist_out_of_fiber
-                    if ratio_dist < internalised_threshold:
-                        n_nuc_intern += 1
-                    else:
-                        n_nuc_periph += 1
-                    break
-            except IndexError:
-                coords = list(zip(rr, cc))[index3 - 1]
-                dist_nuc_cent = calculate_distance(x_fiber, y_fiber, value[3], value[2])
-                dist_out_of_fiber = calculate_distance(
-                    x_fiber, y_fiber, coords[1], coords[0]
-                )
-                ratio_dist = dist_nuc_cent / dist_out_of_fiber
-                if ratio_dist < internalised_threshold:
-                    n_nuc_intern += 1
-                else:
-                    n_nuc_periph += 1
-                break
-
-    return n_nuc, n_nuc_intern, n_nuc_periph
+    return single_cell_analysis(
+        single_cell_img,
+        single_cell_mask,
+        df_nuc_single,
+        x_fiber,
+        y_fiber,
+        selected_fiber + 1,
+        internalised_threshold,
+        draw_and_return=True,
+    )
 
 
 @st.experimental_memo
-def predict_all_cells(
-    histo_img, cellpose_df, mask_stardist, internalised_threshold=0.75
-):
-    list_n_nuc, list_n_nuc_intern, list_n_nuc_periph = [], [], []
-    for index in range(len(cellpose_df)):
-        (
-            single_cell_img,
-            _,
-            single_cell_mask,
-            df_nuc_single,
-        ) = extract_ROIs(histo_img, index, cellpose_df, mask_stardist)
-        x_fiber = cellpose_df.iloc[index, 3] - cellpose_df.iloc[index, 6]
-        y_fiber = cellpose_df.iloc[index, 2] - cellpose_df.iloc[index, 5]
-        n_nuc, n_nuc_intern, n_nuc_periph = single_cell_analysis(
-            single_cell_img,
-            single_cell_mask,
-            df_nuc_single,
-            x_fiber,
-            y_fiber,
-            internalised_threshold,
-        )
-        list_n_nuc.append(n_nuc)
-        list_n_nuc_intern.append(n_nuc_intern)
-        list_n_nuc_periph.append(n_nuc_periph)
-        df_nuc_analysis = pd.DataFrame(
-            list(zip(list_n_nuc, list_n_nuc_intern, list_n_nuc_periph)),
-            columns=["N° Nuc", "N° Nuc Intern", "N° Nuc Periph"],
-        )
-    return df_nuc_analysis
-
-
-@st.experimental_memo
-def predict_single_cell(histo_img, cellpose_df, mask_stardist):
-    pass
-
-
-@st.experimental_memo
-def paint_histo_img(histo_img, cellpose_df, prediction_df):
-    paint_img = np.zeros((histo_img.shape[0], histo_img.shape[1]), dtype=np.uint8)
-    for index in range(len(cellpose_df)):
-        single_cell_mask = cellpose_df.iloc[index, 9].copy()
-        if prediction_df.iloc[index, 1] == 0:
-            paint_img[
-                cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
-                cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
-            ][single_cell_mask] = 1
-        elif prediction_df.iloc[index, 1] > 0:
-            paint_img[
-                cellpose_df.iloc[index, 5] : cellpose_df.iloc[index, 7],
-                cellpose_df.iloc[index, 6] : cellpose_df.iloc[index, 8],
-            ][single_cell_mask] = 2
-    return paint_img
+def st_paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat):
+    return paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat)
 
 
 with st.sidebar:
@@ -207,10 +112,10 @@ with st.sidebar:
     nms_thresh = st.slider("Stardist NMS Tresh", 0.0, 1.0, 0.4, 0.1)
     prob_thresh = st.slider("Stardist Prob Tresh", 0.5, 1.0, 0.5, 0.05)
     st.write("Nuclei Classification Parameter")
-    center_thresh = st.slider("Eccentricity Score Tresh", 0.0, 1.0, 0.75, 0.05)
+    eccentricity_thresh = st.slider("Eccentricity Score Tresh", 0.0, 1.0, 0.75, 0.05)
 
-model_cellpose = load_cellpose()
-model_stardist_fluo = load_stardist_fluo()
+model_cellpose = st_load_cellpose()
+model_stardist = st_load_stardist(fluo=True)
 
 st.title("Breast Muscle Fiber Analysis")
 st.write(
@@ -231,8 +136,10 @@ if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     st.write("Raw Image Nuc")
     image_nuc = st.image(image_ndarray_nuc)
 
-    mask_cellpose = run_cellpose(image_ndarray_cyto)
-    mask_stardist = run_stardist(image_ndarray_nuc, nms_thresh, prob_thresh)
+    mask_cellpose = st_run_cellpose(image_ndarray_cyto, model_cellpose)
+    mask_stardist = st_run_stardist(
+        image_ndarray_nuc, model_stardist, nms_thresh, prob_thresh
+    )
     mask_stardist_copy = mask_stardist.copy()
 
     st.header("Segmentation Results")
@@ -244,60 +151,61 @@ if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     ax.axis("off")
     st.pyplot(fig)
 
-    st.subheader("All cells detected by CellPose")
-    props_cellpose = regionprops_table(
-        mask_cellpose,
-        properties=[
-            "label",
-            "area",
-            "centroid",
-            "eccentricity",
-            "bbox",
-            "image",
-            "perimeter",
-        ],
-    )
-    df_cellpose = pd.DataFrame(props_cellpose)
-    st.dataframe(df_cellpose.drop("image", axis=1))
-
     st.header("Full Nucleus Analysis Results")
-    df_nuc_analysis = predict_all_cells(
-        image_ndarray_cyto, df_cellpose, mask_stardist, center_thresh
+    df_cellpose = st_df_from_cellpose_mask(mask_cellpose)
+    cellpose_df_stat, all_nuc_df_stats = st_predict_all_cells(
+        image_ndarray_cyto,
+        df_cellpose,
+        mask_stardist,
+        internalised_threshold=eccentricity_thresh,
     )
-    st.dataframe(df_nuc_analysis)
-    st.write("Total number of nucleus : ", df_nuc_analysis["N° Nuc"].sum())
+    st.dataframe(
+        cellpose_df_stat.drop(
+            [
+                "centroid-0",
+                "centroid-1",
+                "bbox-0",
+                "bbox-1",
+                "bbox-2",
+                "bbox-3",
+                "image",
+            ],
+            axis=1,
+        )
+    )
+    st.write("Total number of nucleus : ", cellpose_df_stat["N° Nuc"].sum())
     st.write(
         "Total number of internalized nucleus : ",
-        df_nuc_analysis["N° Nuc Intern"].sum(),
+        cellpose_df_stat["N° Nuc Intern"].sum(),
         " (",
         round(
             100
-            * df_nuc_analysis["N° Nuc Intern"].sum()
-            / df_nuc_analysis["N° Nuc"].sum(),
+            * cellpose_df_stat["N° Nuc Intern"].sum()
+            / cellpose_df_stat["N° Nuc"].sum(),
             2,
         ),
         "%)",
     )
     st.write(
         "Total number of peripherical nucleus : ",
-        df_nuc_analysis["N° Nuc Periph"].sum(),
+        cellpose_df_stat["N° Nuc Periph"].sum(),
         " (",
         round(
             100
-            * df_nuc_analysis["N° Nuc Periph"].sum()
-            / df_nuc_analysis["N° Nuc"].sum(),
+            * cellpose_df_stat["N° Nuc Periph"].sum()
+            / cellpose_df_stat["N° Nuc"].sum(),
             2,
         ),
         "%)",
     )
     st.write(
         "Number of cell with at least one internalized nucleus : ",
-        df_nuc_analysis["N° Nuc Intern"].astype(bool).sum(axis=0),
+        cellpose_df_stat["N° Nuc Intern"].astype(bool).sum(axis=0),
         " (",
         round(
             100
-            * df_nuc_analysis["N° Nuc Intern"].astype(bool).sum(axis=0)
-            / len(df_nuc_analysis),
+            * cellpose_df_stat["N° Nuc Intern"].astype(bool).sum(axis=0)
+            / len(cellpose_df_stat),
             2,
         ),
         "%)",
@@ -317,20 +225,13 @@ if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     single_cell_img[~single_cell_mask] = 0
     nucleus_single_cell_img[~single_cell_mask] = 0
 
-    props_nuc_single = regionprops_table(
+    (
+        single_cell_img,
         nucleus_single_cell_img,
-        intensity_image=single_cell_img,
-        properties=[
-            "label",
-            "area",
-            "centroid",
-            "eccentricity",
-            "bbox",
-            "image",
-            "perimeter",
-        ],
-    )
-    df_nuc_single = pd.DataFrame(props_nuc_single)
+        single_cell_mask,
+        df_nuc_single,
+    ) = st_extract_ROIs(mergedarrays, selected_fiber, df_cellpose, mask_stardist)
+
     st.markdown(
         """
         * White point represent cell centroid. 
@@ -338,83 +239,63 @@ if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
         * Red point represent the cell border from a straight line between the cell centroid and the nucleus centroid. The red dashed line represent distance between the nucelus and the cell border. 
         * The periphery ratio is calculated by the division of the distance centroid - nucleus and the distance centroid - cell border."""
     )
-    fig2, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    fig2, (ax1, ax2) = plt.subplots(1, 2)
     ax1.imshow(single_cell_img, cmap="gray")
     ax2.imshow(nucleus_single_cell_img, cmap="viridis")
     # Plot Fiber centroid
     x_fiber = df_cellpose.iloc[selected_fiber, 3] - df_cellpose.iloc[selected_fiber, 6]
     y_fiber = df_cellpose.iloc[selected_fiber, 2] - df_cellpose.iloc[selected_fiber, 5]
-    ax3.scatter(x_fiber, y_fiber, color="white")
-    # Plot nucleus centroid
-    for index, value in df_nuc_single.iterrows():
-        ax3.scatter(value[3], value[2], color="blue", s=2)
-        # Extend line and find closest point
-        m, b = line_equation(x_fiber, y_fiber, value[3], value[2])
 
-        intersections_lst = calculate_intersection(
-            m, b, (single_cell_img.shape[0], single_cell_img.shape[1])
-        )
-        border_point = calculate_closest_point(value[3], value[2], intersections_lst)
-        ax3.plot(
-            (x_fiber, border_point[0]),
-            (y_fiber, border_point[1]),
-            "ro--",
-            linewidth=1,
-            markersize=1,
-        )
-        ax3.plot(
-            (x_fiber, value[3]),
-            (y_fiber, value[2]),
-            "go--",
-            linewidth=1,
-            markersize=1,
-        )
+    (
+        n_nuc,
+        n_nuc_intern,
+        n_nuc_periph,
+        df_nuc_single_stats,
+        ax_nuc,
+    ) = st_single_cell_analysis(
+        single_cell_img,
+        single_cell_mask,
+        df_nuc_single,
+        x_fiber,
+        y_fiber,
+        selected_fiber + 1,
+        internalised_threshold=eccentricity_thresh,
+        draw_and_return=True,
+    )
 
-        rr, cc = line(
-            int(y_fiber),
-            int(x_fiber),
-            int(border_point[1]),
-            int(border_point[0]),
-        )
-        for index, coords in enumerate(list(zip(rr, cc))):
-            try:
-                if single_cell_mask[coords] == 0:
-                    dist_nuc_cent = calculate_distance(
-                        x_fiber, y_fiber, value[3], value[2]
-                    )
-                    dist_out_of_fiber = calculate_distance(
-                        x_fiber, y_fiber, coords[1], coords[0]
-                    )
-                    ratio_dist = dist_nuc_cent / dist_out_of_fiber
-                    ax3.scatter(coords[1], coords[0], color="red", s=10)
-                    break
-            except IndexError:
-                coords = list(zip(rr, cc))[index - 1]
-                dist_nuc_cent = calculate_distance(x_fiber, y_fiber, value[3], value[2])
-                dist_out_of_fiber = calculate_distance(
-                    x_fiber, y_fiber, coords[1], coords[0]
-                )
-                ratio_dist = dist_nuc_cent / dist_out_of_fiber
-                ax3.scatter(coords[1], coords[0], color="red", s=10)
-                break
-
-        st.write("Nucleus #{} has a periphery ratio of: {}".format(index, ratio_dist))
-    ax3.imshow(single_cell_img)
-    ax3.imshow(nucleus_single_cell_img, cmap="viridis", alpha=0.5)
+    for index, value in df_nuc_single_stats.iterrows():
+        st.write("Nucleus #{} has a periphery ratio of: {}".format(index, value[12]))
     ax1.axis("off")
     ax2.axis("off")
-    ax3.axis("off")
-    st.pyplot(fig2)
+    # st.pyplot(fig2)
+    ax_nuc.imshow(single_cell_img)
+    ax_nuc.imshow(nucleus_single_cell_img, cmap="viridis", alpha=0.5)
+    f = ax_nuc.figure
 
+    st.pyplot(fig2)
+    st.pyplot(f)
     st.subheader("All nucleus inside selected cell")
 
-    st.dataframe(df_nuc_single.drop("image", axis=1))
+    st.dataframe(
+        df_nuc_single_stats.drop(
+            [
+                "centroid-0",
+                "centroid-1",
+                "bbox-0",
+                "bbox-1",
+                "bbox-2",
+                "bbox-3",
+                "image",
+            ],
+            axis=1,
+        )
+    )
 
     st.header("Painted predicted image")
     st.write(
         "Green color indicates cells with only peripherical nuclei, red color indicates cells with at least one internal nucleus (regeneration)."
     )
-    painted_img = paint_histo_img(image_ndarray_cyto, df_cellpose, df_nuc_analysis)
+    painted_img = st_paint_histo_img(image_ndarray_cyto, df_cellpose, cellpose_df_stat)
     fig3, ax3 = plt.subplots(1, 1)
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
         "", ["white", "green", "red"]
