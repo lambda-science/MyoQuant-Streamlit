@@ -5,27 +5,80 @@ try:
     from imageio.v2 import imread
 except:
     from imageio import imread
-from skimage.measure import regionprops_table
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow.config import list_physical_devices
-
-from gradcam import *
+import numpy as np
 from os import path
 import urllib.request
-from random_brightness import *
+from myoquant.src.SDH_analysis import (
+    predict_all_cells,
+    predict_single_cell,
+    paint_full_image,
+)
+from myoquant.src.common_func import (
+    load_cellpose,
+    run_cellpose,
+    is_gpu_availiable,
+    df_from_cellpose_mask,
+    load_sdh_model,
+    extract_single_image,
+)
+
+st.set_page_config(
+    page_title="MyoQuant SDH Analysis",
+    page_icon="🔬",
+)
+
+use_GPU = is_gpu_availiable()
+
+
+@st.experimental_singleton
+def st_load_sdh_model(model_path):
+    return load_sdh_model(model_path)
+
+
+@st.experimental_singleton
+def st_load_cellpose():
+    return load_cellpose()
+
+
+@st.experimental_memo
+def st_run_cellpose(image_ndarray, _model):
+    return run_cellpose(image_ndarray, _model)
+
+
+@st.experimental_memo
+def st_df_from_cellpose_mask(mask):
+    return df_from_cellpose_mask(mask)
+
+
+@st.experimental_memo
+def st_predict_all_cells(image_ndarray, cellpose_df, _model_SDH):
+    return predict_all_cells(image_ndarray, cellpose_df, _model_SDH)
+
+
+@st.experimental_memo
+def st_extract_single_image(image_ndarray, cellpose_df, index):
+    return extract_single_image(image_ndarray, cellpose_df, index)
+
+
+@st.experimental_memo
+def st_predict_single_cell(image_ndarray, _model_SDH):
+    return predict_single_cell(image_ndarray, _model_SDH)
+
+
+@st.experimental_memo
+def st_paint_full_image(image_sdh, df_cellpose, class_predicted_all):
+    return paint_full_image(image_sdh, df_cellpose, class_predicted_all)
+
 
 labels_predict = ["control", "sick"]
 
 tf.random.set_seed(42)
 np.random.seed(42)
 
-st.set_page_config(
-    page_title="MyoQuant SDH Analysis",
-    page_icon="🔬",
-)
 
 if path.exists("model.h5"):
     st.success("SDH Model ready to use !")
@@ -37,14 +90,9 @@ else:
         )
     st.success("SDH Model have been downloaded !")
 
-if len(list_physical_devices("GPU")) >= 1:
-    use_GPU = True
-else:
-    use_GPU = False
+model_cellpose = st_load_cellpose()
 
-model_cellpose = load_cellpose()
-
-model_SDH = load_sdh_model()
+model_SDH = st_load_sdh_model("model.h5")
 
 st.title("SDH Staining Analysis")
 st.write(
@@ -59,7 +107,7 @@ if uploaded_file_sdh is not None:
     st.write("Raw Image")
     image = st.image(uploaded_file_sdh)
 
-    mask_cellpose = run_cellpose(image_ndarray_sdh)
+    mask_cellpose = st_run_cellpose(image_ndarray_sdh, model_cellpose)
 
     st.header("Segmentation Results")
     st.subheader("CellPose results")
@@ -68,35 +116,32 @@ if uploaded_file_sdh is not None:
     ax.axis("off")
     st.pyplot(fig)
 
-    st.subheader("All cells detected by CellPose")
-
-    props_cellpose = regionprops_table(
-        mask_cellpose,
-        properties=[
-            "label",
-            "area",
-            "centroid",
-            "eccentricity",
-            "bbox",
-            "image",
-            "perimeter",
-        ],
-    )
-    df_cellpose = pd.DataFrame(props_cellpose)
-    st.dataframe(df_cellpose.drop("image", axis=1))
-
     st.header("SDH Cell Classification Results")
-
-    class_predicted_all, proba_predicted_all = predict_all_cells(
+    df_cellpose = st_df_from_cellpose_mask(mask_cellpose)
+    df_cellpose_results = st_predict_all_cells(
         image_ndarray_sdh, df_cellpose, model_SDH
     )
-
+    class_predicted_all = df_cellpose_results["class_predicted"].values
+    proba_predicted_all = df_cellpose_results["proba_predicted"].values
     count_per_label = np.unique(class_predicted_all, return_counts=True)
     class_and_proba_df = pd.DataFrame(
         list(zip(class_predicted_all, proba_predicted_all)),
         columns=["class", "proba"],
     )
-    class_and_proba_df
+    st.dataframe(
+        df_cellpose_results.drop(
+            [
+                "centroid-0",
+                "centroid-1",
+                "bbox-0",
+                "bbox-1",
+                "bbox-2",
+                "bbox-3",
+                "image",
+            ],
+            axis=1,
+        )
+    )
     st.write("Total number of cells detected: ", len(class_predicted_all))
     for elem in count_per_label[0]:
         st.write(
@@ -112,15 +157,11 @@ if uploaded_file_sdh is not None:
     st.header("Single Cell Grad-CAM")
     selected_fiber = st.selectbox("Select a cell", list(range(len(df_cellpose))))
     selected_fiber = int(selected_fiber)
-    single_cell_img = image_ndarray_sdh[
-        df_cellpose.iloc[selected_fiber, 5] : df_cellpose.iloc[selected_fiber, 7],
-        df_cellpose.iloc[selected_fiber, 6] : df_cellpose.iloc[selected_fiber, 8],
-    ].copy()
+    single_cell_img = st_extract_single_image(
+        image_ndarray_sdh, df_cellpose, selected_fiber
+    )
 
-    single_cell_mask = df_cellpose.iloc[selected_fiber, 9].copy()
-    single_cell_img[~single_cell_mask] = 0
-
-    grad_img, class_predicted, proba_predicted = predict_single_cell(
+    grad_img, class_predicted, proba_predicted = st_predict_single_cell(
         single_cell_img, model_SDH
     )
 
@@ -144,7 +185,7 @@ if uploaded_file_sdh is not None:
     st.write(
         "Green color indicates cells classified as control, red color indicates cells classified as sick"
     )
-    paint_img = paint_full_image(image_ndarray_sdh, df_cellpose, class_predicted_all)
+    paint_img = st_paint_full_image(image_ndarray_sdh, df_cellpose, class_predicted_all)
     fig3, ax3 = plt.subplots(1, 1)
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
         "", ["white", "green", "red"]

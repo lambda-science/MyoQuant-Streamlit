@@ -43,13 +43,13 @@ def st_load_stardist():
 
 
 @st.experimental_memo
-def st_run_cellpose(image_ndarray, model):
-    return run_cellpose(image_ndarray, model)
+def st_run_cellpose(image_ndarray, _model):
+    return run_cellpose(image_ndarray, _model)
 
 
 @st.experimental_memo
-def st_run_stardist(image_ndarray, model, nms_thresh, prob_thresh):
-    return run_stardist(image_ndarray, model, nms_thresh, prob_thresh)
+def st_run_stardist(image_ndarray, _model, nms_thresh, prob_thresh):
+    return run_stardist(image_ndarray, _model, nms_thresh, prob_thresh)
 
 
 @st.experimental_memo
@@ -105,13 +105,14 @@ def st_paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat):
 
 
 with st.sidebar:
-    st.write("Models Parameters")
+    st.write("Nuclei detection Parameters (Stardist)")
     nms_thresh = st.slider("Stardist NMS Tresh", 0.0, 1.0, 0.4, 0.1)
     prob_thresh = st.slider("Stardist Prob Tresh", 0.5, 1.0, 0.5, 0.05)
+    st.write("Nuclei Classification Parameter")
     eccentricity_thresh = st.slider("Eccentricity Score Tresh", 0.0, 1.0, 0.75, 0.05)
 
-model_cellpose = load_cellpose()
-model_stardist = load_stardist()
+model_cellpose = st_load_cellpose()
+model_stardist = st_load_stardist()
 
 st.title("HE Staining Analysis")
 st.write(
@@ -125,8 +126,10 @@ if uploaded_file is not None:
     st.write("Raw Image")
     image = st.image(uploaded_file)
 
-    mask_cellpose = run_cellpose(image_ndarray, model_cellpose)
-    mask_stardist = run_stardist(image_ndarray, model_stardist, nms_thresh, prob_thresh)
+    mask_cellpose = st_run_cellpose(image_ndarray, model_cellpose)
+    mask_stardist = st_run_stardist(
+        image_ndarray, model_stardist, nms_thresh, prob_thresh
+    )
     mask_stardist_copy = mask_stardist.copy()
     st.header("Segmentation Results")
     st.subheader("CellPose and Stardist overlayed results")
@@ -138,10 +141,10 @@ if uploaded_file is not None:
     st.pyplot(fig)
 
     st.subheader("All cells detected by CellPose")
-    df_cellpose = df_from_cellpose_mask(mask_cellpose)
+    df_cellpose = st_df_from_cellpose_mask(mask_cellpose)
 
     st.header("Full Nucleus Analysis Results")
-    cellpose_df_stat, all_nuc_df_stats = predict_all_cells(
+    cellpose_df_stat, all_nuc_df_stats = st_predict_all_cells(
         image_ndarray,
         df_cellpose,
         mask_stardist,
@@ -207,7 +210,7 @@ if uploaded_file is not None:
         nucleus_single_cell_img,
         single_cell_mask,
         df_nuc_single,
-    ) = extract_ROIs(image_ndarray, selected_fiber, df_cellpose, mask_stardist)
+    ) = st_extract_ROIs(image_ndarray, selected_fiber, df_cellpose, mask_stardist)
 
     # df_nuc_single = df_from_stardist_mask(mask_stardist)
     st.markdown(
@@ -231,7 +234,7 @@ if uploaded_file is not None:
         n_nuc_periph,
         df_nuc_single_stats,
         ax_nuc,
-    ) = single_cell_analysis(
+    ) = st_single_cell_analysis(
         single_cell_img,
         single_cell_mask,
         df_nuc_single,
@@ -273,7 +276,7 @@ if uploaded_file is not None:
     st.write(
         "Green color indicates cells with only peripherical nuclei, red color indicates cells with at least one internal nucleus."
     )
-    painted_img = paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat)
+    painted_img = st_paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat)
     fig4, ax4 = plt.subplots(1, 1)
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
         "", ["white", "green", "red"]
