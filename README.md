@@ -1,3 +1,15 @@
+---
+title: MyoQuant Streamlit
+emoji: 🔬
+colorFrom: yellow
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.19.0
+app_file: Home.py
+license: agpl-3.0
+python: 3.10.9
+---
+
 ![Twitter Follow](https://img.shields.io/twitter/follow/corentinm_py?style=social) ![Demo Version](https://img.shields.io/badge/Demo-https%3A%2F%2Flbgi.fr%2FMyoQuant%2F-9cf) ![PyPi](https://img.shields.io/badge/PyPi-https%3A%2F%2Fpypi.org%2Fproject%2Fmyoquant%2F-blueviolet) ![Pypi verison](https://img.shields.io/pypi/v/myoquant)
 
 # MyoQuant-Streamlit🔬: a demo web interface for the MyoQuant tool.

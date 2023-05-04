@@ -1,0 +1,7 @@
+myoquant
+streamlit
+pyngrok
+imageio
+pandas
+matplotlib
+ipykernel
