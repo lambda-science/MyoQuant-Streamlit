@@ -34,42 +34,42 @@ st.set_page_config(
 )
 
 
-@st.experimental_singleton
+@st.cache_resource
 def st_load_cellpose():
     return load_cellpose()
 
 
-@st.experimental_memo
+@st.cache_data
 def st_run_cellpose(image_atp, _model):
     return run_cellpose(image_atp, _model)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_df_from_cellpose_mask(mask):
     return df_from_cellpose_mask(mask)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_get_all_intensity(image_atp, df_cellpose):
     return get_all_intensity(image_atp, df_cellpose)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_estimate_threshold(intensity_list):
     return estimate_threshold(intensity_list)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_plot_density(all_cell_median_intensity, intensity_threshold):
     return plot_density(all_cell_median_intensity, intensity_threshold)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_predict_all_cells(image_atp, cellpose_df, intensity_threshold):
     return predict_all_cells(image_atp, cellpose_df, intensity_threshold)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_paint_full_image(image_atp, df_cellpose, class_predicted_all):
     return paint_full_image(image_atp, df_cellpose, class_predicted_all)
 

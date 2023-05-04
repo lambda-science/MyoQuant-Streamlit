@@ -34,42 +34,42 @@ st.set_page_config(
 use_GPU = is_gpu_availiable()
 
 
-@st.experimental_singleton
+@st.cache_resource
 def st_load_sdh_model(model_path):
     return load_sdh_model(model_path)
 
 
-@st.experimental_singleton
+@st.cache_resource
 def st_load_cellpose():
     return load_cellpose()
 
 
-@st.experimental_memo
+@st.cache_data
 def st_run_cellpose(image_ndarray, _model):
     return run_cellpose(image_ndarray, _model)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_df_from_cellpose_mask(mask):
     return df_from_cellpose_mask(mask)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_predict_all_cells(image_ndarray, cellpose_df, _model_SDH):
     return predict_all_cells(image_ndarray, cellpose_df, _model_SDH)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_extract_single_image(image_ndarray, cellpose_df, index):
     return extract_single_image(image_ndarray, cellpose_df, index)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_predict_single_cell(image_ndarray, _model_SDH):
     return predict_single_cell(image_ndarray, _model_SDH)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_paint_full_image(image_sdh, df_cellpose, class_predicted_all):
     return paint_full_image(image_sdh, df_cellpose, class_predicted_all)
 

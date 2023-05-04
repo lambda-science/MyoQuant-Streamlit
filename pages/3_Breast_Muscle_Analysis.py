@@ -35,37 +35,37 @@ st.set_page_config(
 use_GPU = is_gpu_availiable()
 
 
-@st.experimental_singleton
+@st.cache_resource
 def st_load_cellpose():
     return load_cellpose()
 
 
-@st.experimental_singleton
+@st.cache_resource
 def st_load_stardist(fluo=False):
     return load_stardist(fluo)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_run_cellpose(image_ndarray, _model):
     return run_cellpose(image_ndarray, _model)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_run_stardist(image_ndarray, _model, nms_thresh, prob_thresh):
     return run_stardist(image_ndarray, _model, nms_thresh, prob_thresh)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_df_from_cellpose_mask(mask):
     return df_from_cellpose_mask(mask)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_df_from_stardist_mask(mask):
     return df_from_stardist_mask(mask)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_predict_all_cells(
     image_ndarray, df_cellpose, mask_stardist, internalised_threshold
 ):
@@ -74,12 +74,12 @@ def st_predict_all_cells(
     )
 
 
-@st.experimental_memo
+@st.cache_data
 def st_extract_ROIs(image_ndarray, selected_fiber, df_cellpose, mask_stardist):
     return extract_ROIs(image_ndarray, selected_fiber, df_cellpose, mask_stardist)
 
 
-@st.experimental_memo
+@st.cache_data
 def st_single_cell_analysis(
     single_cell_img,
     single_cell_mask,
@@ -102,7 +102,7 @@ def st_single_cell_analysis(
     )
 
 
-@st.experimental_memo
+@st.cache_data
 def st_paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat):
     return paint_histo_img(image_ndarray, df_cellpose, cellpose_df_stat)
 
