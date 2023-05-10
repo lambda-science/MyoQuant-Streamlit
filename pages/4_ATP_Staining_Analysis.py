@@ -91,7 +91,7 @@ if uploaded_file_atp is not None:
     image_ndarray_atp = imread(uploaded_file_atp)
 
     st.write("Raw Image")
-    image = st.image(uploaded_file_atp)
+    image = st.image(image_ndarray_atp)
 
     mask_cellpose = st_run_cellpose(image_ndarray_atp, model_cellpose)
 

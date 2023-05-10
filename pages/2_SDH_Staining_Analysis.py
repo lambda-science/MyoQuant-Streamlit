@@ -105,7 +105,7 @@ if uploaded_file_sdh is not None:
     image_ndarray_sdh = imread(uploaded_file_sdh)
 
     st.write("Raw Image")
-    image = st.image(uploaded_file_sdh)
+    image = st.image(image_ndarray_sdh)
 
     mask_cellpose = st_run_cellpose(image_ndarray_sdh, model_cellpose)
 

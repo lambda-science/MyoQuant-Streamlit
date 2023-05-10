@@ -123,8 +123,9 @@ uploaded_file = st.file_uploader("Choose a file")
 
 if uploaded_file is not None:
     image_ndarray = imread(uploaded_file)
+
     st.write("Raw Image")
-    image = st.image(uploaded_file)
+    image = st.image(image_ndarray)
 
     mask_cellpose = st_run_cellpose(image_ndarray, model_cellpose)
     mask_stardist = st_run_stardist(
