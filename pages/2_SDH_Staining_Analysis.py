@@ -1,5 +1,7 @@
 import streamlit as st
 from streamlit.components.v1 import html
+import requests
+from io import BytesIO
 
 try:
     from imageio.v2 import imread
@@ -98,8 +100,22 @@ st.title("SDH Staining Analysis")
 st.write(
     "This demo will automatically detect cells classify the SDH stained cell as sick or healthy using our deep-learning model."
 )
-st.write("Upload your SDH Staining image")
-uploaded_file_sdh = st.file_uploader("Choose a file")
+
+
+default_file_url_2 = "https://www.lbgi.fr/~meyer/SDH_models/sample_sdh.jpg"
+
+
+st.write("Upload your SDH Staining image OR click the Load Default File button !")
+col1, col2 = st.columns(2)
+with col1:
+    uploaded_file_sdh = st.file_uploader("Choose a file")
+with col2:
+    if st.button("Load Default File"):
+        # Download the default file
+        response = requests.get(default_file_url_2)
+        # Convert the downloaded content into a file-like object
+        uploaded_file_sdh = BytesIO(response.content)
+
 
 if uploaded_file_sdh is not None:
     image_ndarray_sdh = imread(uploaded_file_sdh)

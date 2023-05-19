@@ -1,6 +1,8 @@
 import streamlit as st
 from streamlit.components.v1 import html
 import matplotlib
+import requests
+from io import BytesIO
 
 try:
     from imageio.v2 import imread
@@ -118,8 +120,20 @@ st.title("HE Staining Analysis")
 st.write(
     "This demo will automatically detect cells and nucleus in the image and try to quantify a certain number of features."
 )
-st.write("Upload your HE Staining image")
-uploaded_file = st.file_uploader("Choose a file")
+
+default_file_url = "https://www.lbgi.fr/~meyer/SDH_models/sample_he.jpg"
+
+
+st.write("Upload your HE Staining image OR click the Load Default File button !")
+col1, col2 = st.columns(2)
+with col1:
+    uploaded_file = st.file_uploader("Choose a file")
+with col2:
+    if st.button("Load Default File"):
+        # Download the default file
+        response = requests.get(default_file_url)
+        # Convert the downloaded content into a file-like object
+        uploaded_file = BytesIO(response.content)
 
 if uploaded_file is not None:
     image_ndarray = imread(uploaded_file)

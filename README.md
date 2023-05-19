@@ -51,9 +51,12 @@ To run this app on Google Colab, simply clone the notebook called `google_colab_
 ## How to Use
 
 Once on the demo, click on the corresponding staining analysis on the sidebar, and upload your histology image. Results will be displayed in the main area automatically.  
-For HE Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_he.jpg)  
-For SDH Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_sdh.jpg)  
-For ATP Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_atp.jpg)
+For all analysis you can press the "Load Default File" to load a sample image to try the tool.
+
+## Troubleshooting
+
+If you have an error like `libcublas.so[0-9] cannot be found`
+It probably means that there is a weird CUDA on CPU-only hardware installation error. Try `pip remove torch` and `pip install torch --index-url https://download.pytorch.org/whl/cpu`, in your python virtual env. It should do the trick.
 
 ## Contact
 

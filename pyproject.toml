@@ -7,13 +7,13 @@ license = "AGPL"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
-myoquant = "^0.3.1"
 streamlit = "^1.22.0"
 pyngrok = "^5.1.0"
 imageio = "^2.21.1"
 pandas = "^1.4.3"
 matplotlib = "^3.5.3"
 ipykernel = "^6.15.1"
+myoquant = "^0.3.5"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"

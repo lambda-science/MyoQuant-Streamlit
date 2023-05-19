@@ -6,7 +6,7 @@ st.set_page_config(
     page_icon="🔬",
 )
 
-st.write("# Welcome to MyoQuant-Streamlit 👋")
+st.write("# MyoQuant-Streamlit🔬")
 
 st.sidebar.success("Select the corresponding staining analysis above.")
 
@@ -15,6 +15,7 @@ st.markdown(
 ## MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of [MyoQuant](https://github.com/lambda-science/MyoQuant). 
 
 ![MyoQuant Banner](https://i.imgur.com/mzALgZL.png)
+![MyoQuant Illustration](https://i.imgur.com/FxpFUT3.png)
 
 [MyoQuant🔬 is a command-line tool to automatically quantify pathological features in muscle fiber histology images.](https://github.com/lambda-science/MyoQuant)  
 It is built using CellPose, Stardist, custom neural-network models and image analysis techniques to automatically analyze myopathy histology images. Currently MyoQuant is capable of quantifying centralization of nuclei in muscle fiber with HE staining and anomaly in the mitochondria distribution in muscle fibers with SDH staining.  
@@ -23,10 +24,7 @@ This web application is intended for demonstration purposes only.
 ## How to Use
 
 Once on the demo, click on the corresponding staining analysis on the sidebar, and upload your histology image. Results will be displayed in the main area automatically.  
-For HE Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_he.jpg)  
-For SDH Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_sdh.jpg)  
-For Breast Muscle Regeneration analysis, you can download this cytoplasm sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/cytoplasmes.tif) and this nuclei sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/noyaux.tif)  
-For ATP Staining analysis, you can download this sample image: [HERE](https://www.lbgi.fr/~meyer/SDH_models/sample_atp.jpg)  
+For all analysis you can press the "Load Default File" to load a sample image to try the tool.
 
 ## Contact
 Creator and Maintainer: [**Corentin Meyer**, 3rd year PhD Student in the CSTB Team, ICube — CNRS — Unistra](https://lambda-science.github.io/)  <corentin.meyer@etu.unistra.fr>  

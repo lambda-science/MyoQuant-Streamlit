@@ -1,6 +1,8 @@
 import streamlit as st
 from streamlit.components.v1 import html
 import matplotlib
+import requests
+from io import BytesIO
 
 try:
     from imageio.v2 import imread
@@ -122,10 +124,27 @@ st.write(
     "This demo will automatically detect cells and nucleus in the image and try to quantify a certain number of features."
 )
 
-st.write("Upload your single channel cytoplasm file (tif of fluo image)")
-uploaded_file_cyto = st.file_uploader("Choose a file (cyto)")
-st.write("Upload your single channel nuclei file (tif of fluo image)")
-uploaded_file_nuc = st.file_uploader("Choose a file (nuc)")
+
+default_file_url_3 = "https://www.lbgi.fr/~meyer/SDH_models/cytoplasmes.tif"
+default_file_url_4 = "https://www.lbgi.fr/~meyer/SDH_models/noyaux.tif"
+
+st.write(
+    "Upload your singles channels images (cytoplasme images and nuclei image) OR click the Load Default File button !"
+)
+col1, col2 = st.columns(2)
+with col1:
+    uploaded_file_cyto = st.file_uploader("Choose a file (cyto)")
+    uploaded_file_nuc = st.file_uploader("Choose a file (nuc)")
+
+with col2:
+    if st.button("Load Default Files"):
+        # Download the default file
+        response3 = requests.get(default_file_url_3)
+        response4 = requests.get(default_file_url_4)
+        # Convert the downloaded content into a file-like object
+        uploaded_file_cyto = BytesIO(response3.content)
+        uploaded_file_nuc = BytesIO(response4.content)
+
 
 if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     image_ndarray_cyto = imread(uploaded_file_cyto)
