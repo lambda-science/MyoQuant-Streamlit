@@ -22,6 +22,10 @@ MyoQuant-Streamlit🔬 is a demo web interface to showcase the usage of MyoQuant
   <img src="https://i.imgur.com/mzALgZL.png" alt="MyoQuant Banner" style="border-radius: 25px;" />
 </p>
 
+<p align="center">
+  <img src="https://i.imgur.com/FxpFUT3.png" alt="MyoQuant Illustration" style="border-radius: 25px;" />
+</p>
+
 MyoQuant🔬 is a command-line tool to automatically quantify pathological features in muscle fiber histology images.  
 It is built using CellPose, Stardist, custom neural-network models and image analysis techniques to automatically analyze myopathy histology images. Currently MyoQuant is capable of quantifying centralization of nuclei in muscle fiber with HE staining, anomaly in the mitochondria distribution in muscle fibers with SDH staining and the number of type 1 muscle fiber vs type 2 muscle fiber with ATP staining.  
 This web application is intended for demonstration purposes only.
