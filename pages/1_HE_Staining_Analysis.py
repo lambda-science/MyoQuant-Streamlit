@@ -3,6 +3,7 @@ from streamlit.components.v1 import html
 import matplotlib
 import requests
 from io import BytesIO
+from copy import deepcopy
 
 try:
     from imageio.v2 import imread
@@ -128,12 +129,20 @@ st.write("Upload your HE Staining image OR click the Load Default File button !"
 col1, col2 = st.columns(2)
 with col1:
     uploaded_file = st.file_uploader("Choose a file")
+    if uploaded_file is not None:
+        st.session_state["uploaded_file"] = uploaded_file
+
 with col2:
     if st.button("Load Default File"):
         # Download the default file
         response = requests.get(default_file_url)
         # Convert the downloaded content into a file-like object
         uploaded_file = BytesIO(response.content)
+        st.session_state["uploaded_file"] = uploaded_file
+
+if "uploaded_file" in st.session_state:
+    uploaded_file = deepcopy(st.session_state["uploaded_file"])
+    uploaded_file.seek(0)
 
 if uploaded_file is not None:
     image_ndarray = imread(uploaded_file)

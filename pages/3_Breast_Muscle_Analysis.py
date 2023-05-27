@@ -3,6 +3,8 @@ from streamlit.components.v1 import html
 import matplotlib
 import requests
 from io import BytesIO
+from copy import deepcopy
+
 
 try:
     from imageio.v2 import imread
@@ -135,6 +137,10 @@ col1, col2 = st.columns(2)
 with col1:
     uploaded_file_cyto = st.file_uploader("Choose a file (cyto)")
     uploaded_file_nuc = st.file_uploader("Choose a file (nuc)")
+    if uploaded_file_cyto is not None:
+        st.session_state["uploaded_file3"] = uploaded_file_cyto
+    if uploaded_file_nuc is not None:
+        st.session_state["uploaded_file4"] = uploaded_file_nuc
 
 with col2:
     if st.button("Load Default Files"):
@@ -145,6 +151,15 @@ with col2:
         uploaded_file_cyto = BytesIO(response3.content)
         uploaded_file_nuc = BytesIO(response4.content)
 
+        st.session_state["uploaded_file3"] = uploaded_file_cyto
+        st.session_state["uploaded_file4"] = uploaded_file_nuc
+
+if "uploaded_file3" in st.session_state and "uploaded_file4" in st.session_state:
+    uploaded_file_cyto = deepcopy(st.session_state["uploaded_file3"])
+    uploaded_file_nuc = deepcopy(st.session_state["uploaded_file4"])
+    uploaded_file_cyto.seek(0)
+    uploaded_file_nuc.seek(0)
+    # Now you can use the uploaded_file as needed
 
 if uploaded_file_cyto is not None and uploaded_file_nuc is not None:
     image_ndarray_cyto = imread(uploaded_file_cyto)

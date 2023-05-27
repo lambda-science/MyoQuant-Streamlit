@@ -3,6 +3,8 @@ from streamlit.components.v1 import html
 import matplotlib
 import requests
 from io import BytesIO
+from copy import deepcopy
+
 
 try:
     from imageio.v2 import imread
@@ -93,13 +95,20 @@ st.write("Upload your ATP Staining image OR click the Load Default File button !
 col1, col2 = st.columns(2)
 with col1:
     uploaded_file_atp = st.file_uploader("Choose a file")
+    if uploaded_file_atp is not None:
+        st.session_state["uploaded_file5"] = uploaded_file_atp
+
 with col2:
     if st.button("Load Default File"):
         # Download the default file
         response = requests.get(default_file_url_5)
         # Convert the downloaded content into a file-like object
         uploaded_file_atp = BytesIO(response.content)
+        st.session_state["uploaded_file5"] = uploaded_file_atp
 
+if "uploaded_file5" in st.session_state:
+    uploaded_file_atp = st.session_state["uploaded_file5"]
+    # Now you can use the uploaded_file as needed
 
 if uploaded_file_atp is not None:
     image_ndarray_atp = imread(uploaded_file_atp)
@@ -125,11 +134,19 @@ if uploaded_file_atp is not None:
 
     st.header("ATP Cell Classification Results")
     if intensity_threshold == 0:
-        muscle_fiber_type_all, all_cell_median_intensity = st_predict_all_cells(
+        (
+            muscle_fiber_type_all,
+            all_cell_median_intensity,
+            intensity_threshold,
+        ) = st_predict_all_cells(
             image_ndarray_atp, df_cellpose, intensity_threshold=None
         )
     else:
-        muscle_fiber_type_all, all_cell_median_intensity = st_predict_all_cells(
+        (
+            muscle_fiber_type_all,
+            all_cell_median_intensity,
+            intensity_threshold,
+        ) = st_predict_all_cells(
             image_ndarray_atp, df_cellpose, intensity_threshold=intensity_threshold
         )
     df_cellpose["muscle_fiber_type"] = muscle_fiber_type_all

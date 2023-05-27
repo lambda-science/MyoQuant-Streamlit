@@ -2,6 +2,8 @@ import streamlit as st
 from streamlit.components.v1 import html
 import requests
 from io import BytesIO
+from copy import deepcopy
+
 
 try:
     from imageio.v2 import imread
@@ -109,12 +111,21 @@ st.write("Upload your SDH Staining image OR click the Load Default File button !
 col1, col2 = st.columns(2)
 with col1:
     uploaded_file_sdh = st.file_uploader("Choose a file")
+    if uploaded_file_sdh is not None:
+        st.session_state["uploaded_file2"] = uploaded_file_sdh
+
 with col2:
     if st.button("Load Default File"):
         # Download the default file
         response = requests.get(default_file_url_2)
         # Convert the downloaded content into a file-like object
         uploaded_file_sdh = BytesIO(response.content)
+        st.session_state["uploaded_file2"] = uploaded_file_sdh
+
+if "uploaded_file2" in st.session_state:
+    uploaded_file_sdh = deepcopy(st.session_state["uploaded_file2"])
+    # Now you can use the uploaded_file as needed
+    uploaded_file_sdh.seek(0)  # reset the file pointer to the start
 
 
 if uploaded_file_sdh is not None:
